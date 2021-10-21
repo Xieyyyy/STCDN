@@ -65,7 +65,7 @@ elif args.data == "PEMS-D8":
 
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
-    utils.record_info("GAT无softmax",
+    utils.record_info("---",
                       "./records/" + args.comment)
     sw = SummaryWriter(comment=args.comment)
 

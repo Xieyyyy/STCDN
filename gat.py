@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dgl.utils import expand_as_pair
+import dgl.ops as ops
+
 
 
 class GATLayer(nn.Module):
@@ -41,8 +43,8 @@ class GATLayer(nn.Module):
             w = self.graph.edata['w'].unsqueeze(-1).unsqueeze(-1)
             w = torch.repeat_interleave(w, self.num_heads, 1)
             e = w * e
-            # self.graph.edata['a'] = self.attn_drop(ops.edge_softmax(self.graph, e))
-            self.graph.edata['a'] = self.attn_drop(e)
+            self.graph.edata['a'] = self.attn_drop(ops.edge_softmax(self.graph, e))
+            # self.graph.edata['a'] = self.attn_drop(e)
 
             self.graph.update_all(fn.u_mul_e(lhs_field='ft', rhs_field='a', out='m'), fn.sum(msg='m', out='ft'))
             rst = self.graph.dstdata['ft']
