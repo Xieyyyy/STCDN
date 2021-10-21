@@ -89,7 +89,7 @@ def get_adjacency_matrix(distance_df_filename, num_of_vertices, id_filename=None
         if id_filename:
 
             with open(id_filename, 'r') as f:
-                id_dict = {int(i): idx for idx, i in enumerate(f.read().strip().split('\n'))}  # 把节点id（idx）映射成从0开始的索引
+                id_dict = {int(i): idx for idx, i in enumerate(f.read().strip().split('\n'))}
 
             with open(distance_df_filename, 'r') as f:
                 f.readline()
