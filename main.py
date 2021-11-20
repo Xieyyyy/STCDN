@@ -10,8 +10,8 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:1")
-parser.add_argument('--data', type=str, default='METR-LA', help='dataset')
+parser.add_argument("--device", type=str, default="cuda:6")
+parser.add_argument('--data', type=str, default='PEMS-D3', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=520, help='random seed')
@@ -19,7 +19,7 @@ parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.0001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="METR-LS",
+parser.add_argument("--comment", type=str, default="PEMS-D3",
                     help='whether recording')
 parser.add_argument("--recording", type=bool, default=True, help='whether recording')
 
@@ -31,7 +31,7 @@ parser.add_argument("--seq_in", type=int, default=12, help='historical length')
 parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
 
 # ---for encoder----
-parser.add_argument("--encoder_interval", type=int, default=2, help="interval of ODE")
+parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
 parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
@@ -40,7 +40,7 @@ parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of
 
 # ---for decoder----
 parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
-parser.add_argument("--decoder_interval", type=int, default=2, help="interval of ODE")
+parser.add_argument("--decoder_interval", type=int, default=3, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
@@ -55,10 +55,25 @@ if args.data == "METR-LA":
     args.in_dim = 1
     args.task = "speed"
 
-if args.data == "PEMS-D4":
+
+elif args.data == "PEMS-D3":
+    args.data_file = "./data/PEMS-D3"
+    args.adj_data = "./data/sensor_graph/pems03.csv"
+    args.num_node = 358
+    args.in_dim = 1
+    args.task = "flow"
+
+elif args.data == "PEMS-D4":
     args.data_file = "./data/PEMS-D4"
     args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
     args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
+
+elif args.data == "PEMS-D7":
+    args.data_file = "./data/PEMS-D7"
+    args.adj_data = "./data/sensor_graph/PEMS07.csv"
+    args.num_node = 883
     args.in_dim = 1
     args.task = "flow"
 
@@ -107,10 +122,11 @@ def main():
         for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
             trainX = torch.Tensor(x).to(args.device)
             trainy = torch.Tensor(y).to(args.device)
+
             if args.task == "speed":
                 metrics = engine.train(trainX[..., 0:1], trainy[..., 0:1])
             elif args.task == "flow":
-                metrics = engine.train(trainX, trainy)
+                metrics = engine.train(trainX[..., 0:1], trainy[..., 0:1])
             train_loss.append(metrics[0])
             train_mape.append(metrics[1])
             train_rmse.append(metrics[2])
@@ -157,7 +173,7 @@ def main():
                 valid_mape.append(metrics[1])
                 valid_rmse.append(metrics[2])
             elif args.task == "flow":
-                metrics = engine.eval(valx, valy)
+                metrics = engine.eval(valx[..., 0:1], valy[..., 0:1])
                 valid_loss.append(metrics[0])
                 valid_mape.append(metrics[1])
                 valid_rmse.append(metrics[2])

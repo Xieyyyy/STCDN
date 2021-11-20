@@ -42,13 +42,19 @@ class Holder():
                 continous_outputs, decrete_outputs = self.model(inputs)
         reals = reals[:, :self.args.seq_out, :, :]
         prediction = self.args.scaler.inv_transform(decrete_outputs)
-        maes = [self.loss(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
-                self.loss(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),
-                self.loss(prediction[:, -1, :, :], reals[:, -1, :, :], 0.0).item()]
-        mapes = [utils.masked_mape(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
-                 utils.masked_mape(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),
-                 utils.masked_mape(prediction[:, -1, :, :], reals[:, -1, :, :], 0.0).item()]
-        rmses = [utils.masked_rmse(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
-                 utils.masked_rmse(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),
-                 utils.masked_rmse(prediction[:, -1, :, :], reals[:, -1, :, :], 0.0).item()]
-        return maes, mapes, rmses
+        if self.args.task == "speed":
+            maes = [self.loss(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
+                    self.loss(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),
+                    self.loss(prediction[:, -1, :, :], reals[:, -1, :, :], 0.0).item()]
+            mapes = [utils.masked_mape(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
+                     utils.masked_mape(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),
+                     utils.masked_mape(prediction[:, -1, :, :], reals[:, -1, :, :], 0.0).item()]
+            rmses = [utils.masked_rmse(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
+                     utils.masked_rmse(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),
+                     utils.masked_rmse(prediction[:, -1, :, :], reals[:, -1, :, :], 0.0).item()]
+            return maes, mapes, rmses
+        else:
+            mae = self.loss(prediction, reals, 0.0).item()
+            mape = utils.masked_mape(prediction, reals, 0.0).item()
+            rmse = utils.masked_rmse(prediction, reals, 0.0).item()
+            return mae, mape, rmse
