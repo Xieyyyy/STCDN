@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import numpy as np
 import torch
@@ -55,6 +56,19 @@ class StandardScalar:
 def record_info(info, file_dir):
     with open(file_dir, 'a') as f:
         f.writelines(info + "\n")
+
+
+def load_pickle(pickle_file):
+    try:
+        with open(pickle_file, 'rb') as f:
+            pickle_data = pickle.load(f)
+    except UnicodeDecodeError as e:
+        with open(pickle_file, 'rb') as f:
+            pickle_data = pickle.load(f, encoding='latin1')
+    except Exception as e:
+        print('Unable to load data ', pickle_file, ':', e)
+        raise
+    return pickle_data
 
 
 def get_adjacency_matrix(distance_df_filename, num_of_vertices, id_filename=None):
