@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:4")
+parser.add_argument("--device", type=str, default="cuda:0")
 parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
