@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchdiffeq
-from gat import GAT
+from gat import GATDecoder as GAT
 from scipy import sparse as sp
 
 
@@ -31,7 +31,6 @@ class Decoder(nn.Module):
                                           nn.Linear(self.args.hidden_dim, self.args.out_dim, bias=True))
 
     def forward(self, y0):
-        y0 = y0.squeeze(1)
         out = self.ode_dynamics(self.T, y0).transpose(0, 1)
         out = self.output_layer(out)
         if self.args.decoder_interval == None:

@@ -1,9 +1,8 @@
 import dgl
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torchdiffeq
-from gat import GAT
+from gat import GATEncoder as GAT
 from scipy import sparse as sp
 
 
@@ -12,7 +11,11 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
         self.args = args
         self.linear_in = nn.Linear(self.args.in_dim, self.args.hidden_dim)
-        self.T = torch.linspace(0., 1., self.args.encoder_interval + 1) * self.args.encoder_scale
+        T = torch.linspace(0., self.args.seq_in,
+                           self.args.encoder_interval * self.args.seq_in + 1) * self.args.encoder_scale
+        self.register_buffer('T', T)
+        id_train = torch.linspace(0., self.args.seq_in, self.args.seq_in + 1) * self.args.encoder_scale
+        self.register_buffer('id_train', id_train)
         self.graph = self._generate_graph().to(self.args.device)
 
         self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim, out_dim=self.args.hidden_dim, num_layers=1,
@@ -31,15 +34,10 @@ class Encoder(nn.Module):
         inputs = self.linear_in(inputs)
         x = inputs[:, 0, :, :].contiguous().squeeze(1)
         ret = x
-        for idx in range(self.args.seq_in):
-            ret = self.ode_dynamics(self.T, ret)[-1]
-            if idx != 0:
-                input = inputs[:, idx, :, :].contiguous().squeeze(1)
-                ret = F.tanh(self.W(ret) + self.U(input))
-            ret = self.layer_norm(ret)
-        out = ret.view(self.args.batch_size, self.args.num_node, self.args.hidden_dim).unsqueeze(0)
-        out = out.transpose(0, 1)
-        out = self.output_layer(out)
+        ret = \
+            self.ode_dynamics(vt=self.T, y0=ret, H=self.id_train, W=self.W, U=self.U, ln=self.layer_norm,
+                              inputs=inputs)[-1]
+        out = self.output_layer(ret)
         return out
 
     def _generate_graph(self):
@@ -59,15 +57,15 @@ class ODEDynamic(nn.Module):
         self.terminal = terminal
         self.perform_num = 0
 
-    def forward(self, vt, y0):
+    def forward(self, vt, y0, **kwargs):
         self.perform_num += 1
         integration_time_vector = vt.type_as(y0)
         if self.adjoint:
             out = torchdiffeq.odeint_adjoint(func=self.ode_func, y0=y0, t=integration_time_vector, rtol=self.rtol,
-                                             atol=self.atol, method=self.method)
+                                             atol=self.atol, method=self.method, **kwargs)
         else:
             out = torchdiffeq.odeint(func=self.ode_func, y0=y0, t=integration_time_vector, rtol=self.rtol,
-                                     atol=self.atol, method=self.method)
+                                     atol=self.atol, method=self.method, **kwargs)
         return out
 
     def reset(self):

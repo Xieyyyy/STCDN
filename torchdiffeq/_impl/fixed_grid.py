@@ -1,10 +1,10 @@
-from .solvers import FixedGridODESolver
 from . import rk_common
+from .solvers import FixedGridODESolver
 
 
 class Euler(FixedGridODESolver):
 
-    def step_func(self, func, t, dt, y):
+    def step_func(self, func, t, dt, y, **kwargs):
         return tuple(dt * f_ for f_ in func(t, y))
 
     @property

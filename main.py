@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:0")
+parser.add_argument("--device", type=str, default="cuda:3")
 parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
@@ -19,9 +19,9 @@ parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="PEMS-D8_lr*10_exp_decay0.99_adp_batchnoview",
+parser.add_argument("--comment", type=str, default="PEMS-D8_lr*10_exp_decay0.99_adp_batchnoview_inode",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=False, help='whether recording')
+parser.add_argument("--recording", type=bool, default=True, help='whether recording')
 
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
@@ -130,7 +130,8 @@ def main():
             train_loss.append(metrics[0])
             train_mape.append(metrics[1])
             train_rmse.append(metrics[2])
-            averaged_nfe_enc = engine.model.encoder.ode_func.nfe / engine.model.encoder.ode_dynamics.perform_num
+            averaged_nfe_enc = engine.model.encoder.ode_func.nfe / (
+                        engine.model.encoder.ode_dynamics.perform_num * args.seq_in)
             averaged_nfe_dec = engine.model.decoder.ode_func.nfe / (
                     engine.model.decoder.ode_dynamics.perform_num * args.seq_out)
             averaged_nfe_record_enc.append(averaged_nfe_enc)
@@ -199,7 +200,8 @@ def main():
             valid_mape = np.mean(valid_mape, axis=0)
             valid_rmse = np.mean(valid_rmse, axis=0)
 
-        averaged_nfe_enc = engine.model.encoder.ode_func.nfe / engine.model.encoder.ode_dynamics.perform_num
+        averaged_nfe_enc = engine.model.encoder.ode_func.nfe / (
+                engine.model.encoder.ode_dynamics.perform_num * args.seq_in)
         averaged_nfe_dec = engine.model.decoder.ode_func.nfe / (
                 engine.model.decoder.ode_dynamics.perform_num * args.seq_out)
         averaged_nfe_record_enc.append(averaged_nfe_enc)

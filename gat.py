@@ -55,9 +55,9 @@ class GATLayer(nn.Module):
         return rst.transpose(0, 1)
 
 
-class GAT(nn.Module):
+class GATEncoder(nn.Module):
     def __init__(self, args, in_dim, out_dim, num_layers, dropout, num_heads, graph):
-        super(GAT, self).__init__()
+        super(GATEncoder, self).__init__()
         self.args = args
         self.nfe = 0
         self.initial_value = None
@@ -72,7 +72,50 @@ class GAT(nn.Module):
         self.dropout = dropout
         self.num_heads = num_heads
 
-    def forward(self, vt=None, features=None):
+    def forward(self, vt=None, features=None, **kwargs):
+        self.nfe += 1
+        idx = int(vt / self.args.encoder_scale)
+        if vt in kwargs["H"]:
+            if idx == 0:
+                features = F.tanh(kwargs['U'](features))
+
+            else:
+                features = F.tanh(
+                    kwargs['U'](features) + kwargs['W'](kwargs['inputs'][:, idx, :, :].contiguous().squeeze(1)))
+            features = kwargs['ln'](features)
+        x = features
+        out = []
+        for idx, layer in enumerate(self.gat_layers):
+            x = layer(vt, x)
+            x = torch.cat([x[:, :, i, :] for i in range(self.num_heads)], dim=2)
+            out.append(x)
+        h = torch.cat(out, dim=-1)
+        h = self.out_mlp(h)
+        features = F.dropout(h, self.dropout, training=self.training)
+        return features
+
+    def reset(self):
+        self.nfe = 0
+
+
+class GATDecoder(nn.Module):
+    def __init__(self, args, in_dim, out_dim, num_layers, dropout, num_heads, graph):
+        super(GATDecoder, self).__init__()
+        self.args = args
+        self.nfe = 0
+        self.initial_value = None
+        self.num_layers = num_layers
+        self.out_mlp = nn.Linear(num_layers * out_dim, out_dim)
+        self.gat_layers = nn.ModuleList(
+            GATLayer(in_dim=in_dim, out_dim=int(out_dim / num_heads), num_heads=num_heads,
+                     graph=graph,
+                     feat_drop=dropout, attn_drop=dropout,
+                     activation=F.relu) for _ in range(num_layers))
+
+        self.dropout = dropout
+        self.num_heads = num_heads
+
+    def forward(self, vt=None, features=None, **kwargs):
         self.nfe += 1
         x = features
         out = []
