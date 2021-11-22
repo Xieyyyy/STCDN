@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:1")
+parser.add_argument("--device", type=str, default="cuda:6")
 parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
@@ -19,9 +19,9 @@ parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="PEMS-D8_lr*10_exp_decay0.99",
+parser.add_argument("--comment", type=str, default="PEMS-D8_lr*10_exp_decay0.99_rk4",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=True, help='whether recording')
+parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
@@ -31,7 +31,7 @@ parser.add_argument("--seq_in", type=int, default=12, help='historical length')
 parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
 
 # ---for encoder----
-parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--encoder_interval", type=int, default=2, help="interval of ODE")
 parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
@@ -40,7 +40,7 @@ parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of
 
 # ---for decoder----
 parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
-parser.add_argument("--decoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--decoder_interval", type=int, default=2, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
