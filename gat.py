@@ -1,10 +1,9 @@
 import dgl.function as fn
+import dgl.ops as ops
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dgl.utils import expand_as_pair
-import dgl.ops as ops
-
 
 
 class GATLayer(nn.Module):
@@ -31,17 +30,18 @@ class GATLayer(nn.Module):
 
     def forward(self, vt, x):
         with self.graph.local_scope():
+            B, N, D = x.shape
             h_src = self.feat_drop(x)
-            feat_src = feat_dst = self.fc(h_src).view(-1, self.num_heads, self.out_dim)
+            feat_src = feat_dst = self.fc(h_src).view(B, N, self.num_heads, self.out_dim).transpose(0, 1)
 
             el = (feat_src * self.attn_left).sum(dim=-1).unsqueeze(-1)
             er = (feat_dst * self.attn_right).sum(dim=-1).unsqueeze(-1)
             self.graph.srcdata.update({'ft': feat_src, 'el': el})
             self.graph.dstdata.update({'er': er})
             self.graph.apply_edges(fn.u_add_v(lhs_field='el', rhs_field='er', out='e'))
-            e = self.leaky_relu(self.graph.edata.pop('e'))  # [edge_num,num_head,1]
-            w = self.graph.edata['w'].unsqueeze(-1).unsqueeze(-1)
-            w = torch.repeat_interleave(w, self.num_heads, 1)
+            e = self.leaky_relu(self.graph.edata.pop('e'))  # [edge_num,batch_size,num_head,1]
+            w = self.graph.edata['w']
+            w = w.reshape(w.shape[0], 1, 1, 1).repeat(1, B, self.num_heads, 1)
             e = w * e
             self.graph.edata['a'] = self.attn_drop(ops.edge_softmax(self.graph, e))
             # self.graph.edata['a'] = self.attn_drop(e)
@@ -52,7 +52,7 @@ class GATLayer(nn.Module):
             if self.activation:
                 rst = self.activation(rst)
 
-        return rst
+        return rst.transpose(0, 1)
 
 
 class GAT(nn.Module):
@@ -78,7 +78,7 @@ class GAT(nn.Module):
         out = []
         for idx, layer in enumerate(self.gat_layers):
             x = layer(vt, x)
-            x = torch.cat([x[:, i, :] for i in range(self.num_heads)], dim=1)
+            x = torch.cat([x[:, :, i, :] for i in range(self.num_heads)], dim=2)
             out.append(x)
         h = torch.cat(out, dim=-1)
         h = self.out_mlp(h)

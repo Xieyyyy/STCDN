@@ -3,9 +3,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchdiffeq
-from scipy import sparse as sp
-
 from gat import GAT
+from scipy import sparse as sp
 
 
 class Decoder(nn.Module):
@@ -21,7 +20,7 @@ class Decoder(nn.Module):
                 np.arange(self.args.decoder_interval, self.args.decoder_interval * (self.args.seq_out + 1),
                           self.args.decoder_interval))
 
-        self.graph = self._generate_graph()
+        self.graph = self._generate_graph().to(self.args.device)
         self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim, out_dim=self.args.hidden_dim, num_layers=1,
                             dropout=self.args.dropout, num_heads=self.args.num_heads, graph=self.graph)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.decoder_rtol,
@@ -32,15 +31,8 @@ class Decoder(nn.Module):
                                           nn.Linear(self.args.hidden_dim, self.args.out_dim, bias=True))
 
     def forward(self, y0):
-        y0 = y0.view(self.args.batch_size * self.args.num_node, self.args.hidden_dim)
-        out = self.ode_dynamics(self.T, y0)
-        if self.args.decoder_interval == None:
-            out = out.view(self.args.seq_out + 1, self.args.batch_size, self.args.num_node,
-                           self.args.hidden_dim)
-        else:
-            out = out.view(self.args.decoder_interval * self.args.seq_out + 1, self.args.batch_size, self.args.num_node,
-                           self.args.hidden_dim)
-        out = out.transpose(0, 1)
+        y0 = y0.squeeze(1)
+        out = self.ode_dynamics(self.T, y0).transpose(0, 1)
         out = self.output_layer(out)
         if self.args.decoder_interval == None:
             return out, None
@@ -50,8 +42,8 @@ class Decoder(nn.Module):
     def _generate_graph(self):
         adj_mx = sp.csr_matrix(self.args.adj_mx)
         graph = dgl.from_scipy(adj_mx, eweight_name='w')
-        batch_graph = dgl.batch([graph for _ in range(self.args.batch_size)])
-        return batch_graph.to(self.args.device)
+        # batch_graph = dgl.batch([graph for _ in range(self.args.batch_size)])
+        return graph
 
 
 class ODEDynamic(nn.Module):
