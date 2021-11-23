@@ -17,10 +17,10 @@ class GATLayer(nn.Module):
         self.leaky_relu = nn.LeakyReLU(neg_slope)
         self.activation = activation
         self.graph = graph
-        self.fc = nn.Linear(self.in_src_dim, self.in_src_dim, bias=False)
-        self.attn_left = nn.Parameter(torch.FloatTensor(size=(1, self.num_heads, int(self.in_src_dim / num_heads))))
-        self.attn_right = nn.Parameter(torch.FloatTensor(size=(1, self.num_heads, int(self.in_src_dim / num_heads))))
-        self.out_fc = nn.Linear(int(self.in_src_dim / num_heads), self.out_dim)
+        self.fc = nn.Linear(self.in_src_dim, self.out_dim * self.num_heads)
+        self.attn_left = nn.Parameter(torch.FloatTensor(size=(1, self.num_heads, self.out_dim)))
+        self.attn_right = nn.Parameter(torch.FloatTensor(size=(1, self.num_heads, self.out_dim)))
+        self.out_fc = nn.Linear(self.out_dim, self.out_dim)
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -35,7 +35,7 @@ class GATLayer(nn.Module):
             h_src = self.feat_drop(x)
             feat_src = feat_dst = self.fc(h_src).view(B, N, self.num_heads, -1).transpose(0, 1)  # [170,32,8,16]
 
-            el = (feat_src * self.attn_left).sum(dim=-1).unsqueeze(-1)
+            el = (feat_src * self.attn_left).sum(dim=-1).unsqueeze(-1) # attn_left:[1,8,16]
             er = (feat_dst * self.attn_right).sum(dim=-1).unsqueeze(-1)
             self.graph.srcdata.update({'ft': feat_src, 'el': el})
             self.graph.dstdata.update({'er': er})
@@ -74,7 +74,7 @@ class GATEncoder(nn.Module):
         self.dropout = dropout
         self.num_heads = num_heads
 
-    def forward(self, vt=None, features=None, solutions=None):
+    def forward(self, vt=None, features=None, **kwargs):
         self.nfe += 1
         x = features
         out = []
@@ -108,14 +108,14 @@ class GATDecoder(nn.Module):
         self.dropout = dropout
         self.num_heads = num_heads
 
-    def forward(self, vt=None, features=None, solutions=None):
+    def forward(self, vt=None, features=None, **kwargs):
         self.nfe += 1
-        if len(solutions) < self.args.back_look:
-            back_look_feat = torch.cat([solution[0] for solution in solutions], dim=-1)
-            pad_len = self.args.hidden_dim * (self.args.back_look - len(solutions))
+        if len(kwargs['solutions']) < self.args.back_look:
+            back_look_feat = torch.cat([solution[0] for solution in kwargs['solutions']], dim=-1)
+            pad_len = self.args.hidden_dim * (self.args.back_look - len(kwargs['solutions']))
             features = F.pad(back_look_feat, (pad_len, 0, 0, 0, 0, 0))
         else:
-            features = torch.cat([solution[0] for solution in solutions[-self.args.back_look:]], dim=-1)
+            features = torch.cat([solution[0] for solution in kwargs['solutions'][-self.args.back_look:]], dim=-1)
         x = features
         out = []
         for idx, layer in enumerate(self.gat_layers):

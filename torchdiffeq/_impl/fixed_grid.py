@@ -4,8 +4,8 @@ from .solvers import FixedGridODESolver
 
 class Euler(FixedGridODESolver):
 
-    def step_func(self, func, t, dt, y, solutions):
-        return tuple(dt * f_ for f_ in func(t, y, solutions))
+    def step_func(self, func, t, dt, y, **kwargs):
+        return tuple(dt * f_ for f_ in func(t, y, **kwargs))
 
     @property
     def order(self):
@@ -14,7 +14,7 @@ class Euler(FixedGridODESolver):
 
 class Midpoint(FixedGridODESolver):
 
-    def step_func(self, func, t, dt, y, his_solution):
+    def step_func(self, func, t, dt, y, solutions):
         y_mid = tuple(y_ + f_ * dt / 2 for y_, f_ in zip(y, func(t, y)))
         return tuple(dt * f_ for f_ in func(t + dt / 2, y_mid))
 
@@ -25,7 +25,7 @@ class Midpoint(FixedGridODESolver):
 
 class RK4(FixedGridODESolver):
 
-    def step_func(self, func, t, dt, y, his_solution):
+    def step_func(self, func, t, dt, y, solutions):
         return rk_common.rk4_alt_step_func(func, t, dt, y)
 
     @property

@@ -177,7 +177,7 @@ def _check_inputs(func, y0, t):
         tensor_input = True
         y0 = (y0,)
         _base_nontuple_func_ = func
-        func = lambda t, y, solutions: (_base_nontuple_func_(t, y[0], solutions),)
+        func = lambda t, y, **kwargs: (_base_nontuple_func_(t, y[0], **kwargs),)
     assert isinstance(y0, tuple), 'y0 must be either a torch.Tensor or a tuple'
     for y0_ in y0:
         assert torch.is_tensor(y0_), 'each element must be a torch.Tensor but received {}'.format(type(y0_))
