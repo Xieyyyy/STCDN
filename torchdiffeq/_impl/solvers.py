@@ -1,5 +1,7 @@
 import abc
+
 import torch
+
 from .misc import _assert_increasing, _handle_unused_kwargs
 
 
@@ -73,11 +75,11 @@ class FixedGridODESolver(object):
         pass
 
     @abc.abstractmethod
-    def step_func(self, func, t, dt, y):
+    def step_func(self, func, t, dt, y, solutions):
         pass
 
     def integrate(self, t):
-        _assert_increasing(t) # 判断积分的时间区间是正向的
+        _assert_increasing(t)  # 判断积分的时间区间是正向的
         t = t.type_as(self.y0[0])
         time_grid = self.grid_constructor(self.func, self.y0, t)
         assert time_grid[0] == t[0] and time_grid[-1] == t[-1]
@@ -88,7 +90,7 @@ class FixedGridODESolver(object):
         j = 1
         y0 = self.y0
         for t0, t1 in zip(time_grid[:-1], time_grid[1:]):
-            dy = self.step_func(self.func, t0, t1 - t0, y0)
+            dy = self.step_func(self.func, t0, t1 - t0, y0, solution)
             y1 = tuple(y0_ + dy_ for y0_, dy_ in zip(y0, dy))
             y0 = y1
 

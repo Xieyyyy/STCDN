@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchdiffeq
-from gat import GAT
+from gat import GATEncoder as GAT
 from scipy import sparse as sp
 
 

@@ -23,6 +23,9 @@ parser.add_argument("--comment", type=str, default="PEMS-D8_lr*10_exp_decay0.99_
                     help='whether recording')
 parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
+
+# python main.py --device cuda:4 --data PEMS-D8 --comment PEMS-D8_lr*10_exp_decay0.99_adp_batchnoview_addmulti_input_2 --recording True
+
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
 parser.add_argument('--hidden_dim', type=int, default=128, help='hidden dimension')
@@ -45,6 +48,7 @@ parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
 parser.add_argument("--decoder_scale", type=float, default=0.01, help='scaler of T')
+parser.add_argument("--back_look", type=int, default=3, help='back look')
 
 args = parser.parse_args()
 
