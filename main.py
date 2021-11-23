@@ -24,7 +24,7 @@ parser.add_argument("--comment", type=str, default="PEMS-D4_multi_input1",
 parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
 
-# python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
+# python main.py --device cuda:5 --data PEMS-D4 --comment PEMS-D4_modified_attn --recording True
 
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')

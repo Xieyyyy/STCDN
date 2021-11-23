@@ -18,8 +18,8 @@ class GATLayer(nn.Module):
         self.activation = activation
         self.graph = graph
         self.fc = nn.Linear(self.in_src_dim, self.out_dim * self.num_heads)
-        self.attn_left = nn.Parameter(torch.FloatTensor(size=(1, self.num_heads, self.out_dim)))
-        self.attn_right = nn.Parameter(torch.FloatTensor(size=(1, self.num_heads, self.out_dim)))
+        self.attn_left = nn.Parameter(torch.FloatTensor(size=(self.num_heads, self.out_dim, self.out_dim)))
+        self.attn_right = nn.Parameter(torch.FloatTensor(size=(self.num_heads, self.out_dim, self.out_dim)))
         self.out_fc = nn.Linear(self.out_dim, self.out_dim)
         self._reset_parameters()
 
@@ -35,8 +35,8 @@ class GATLayer(nn.Module):
             h_src = self.feat_drop(x)
             feat_src = feat_dst = self.fc(h_src).view(B, N, self.num_heads, -1).transpose(0, 1)  # [170,32,8,16]
 
-            el = (feat_src * self.attn_left).sum(dim=-1).unsqueeze(-1) # attn_left:[1,8,16]
-            er = (feat_dst * self.attn_right).sum(dim=-1).unsqueeze(-1)
+            el = ((feat_dst.transpose(1, 2) @ self.attn_left).sum(dim=-1).unsqueeze(-1)).transpose(1, 2)
+            er = ((feat_dst.transpose(1, 2) @ self.attn_right).sum(dim=-1).unsqueeze(-1)).transpose(1, 2)
             self.graph.srcdata.update({'ft': feat_src, 'el': el})
             self.graph.dstdata.update({'er': er})
             self.graph.apply_edges(fn.u_add_v(lhs_field='el', rhs_field='er', out='e'))
