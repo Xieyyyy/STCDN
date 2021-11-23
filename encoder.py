@@ -22,6 +22,7 @@ class Encoder(nn.Module):
                             dropout=self.args.dropout, num_heads=self.args.num_heads, graph=self.graph)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.encoder_rtol, atol=self.args.encoder_atol,
                                        adjoint=self.args.encoder_adjoint, method=self.args.encoder_integrate_mathod)
+
         self.output_layer = nn.Sequential(nn.Linear(self.args.hidden_dim, self.args.hidden_dim, bias=True),
                                           nn.Tanh(),
                                           nn.Linear(self.args.hidden_dim, self.args.hidden_dim, bias=True))

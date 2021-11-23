@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:3")
+parser.add_argument("--device", type=str, default="cuda:5")
 parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
@@ -19,9 +19,12 @@ parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="PEMS-D8_lr*10_exp_decay0.99_adp_batchnoview_inode",
+parser.add_argument("--comment", type=str, default="PEMS-D4_multi_input1",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=True, help='whether recording')
+parser.add_argument("--recording", type=bool, default=False, help='whether recording')
+
+
+# python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
 
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
@@ -45,6 +48,7 @@ parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
 parser.add_argument("--decoder_scale", type=float, default=0.01, help='scaler of T')
+parser.add_argument("--back_look", type=int, default=3, help='back look')
 
 args = parser.parse_args()
 
@@ -130,8 +134,7 @@ def main():
             train_loss.append(metrics[0])
             train_mape.append(metrics[1])
             train_rmse.append(metrics[2])
-            averaged_nfe_enc = engine.model.encoder.ode_func.nfe / (
-                        engine.model.encoder.ode_dynamics.perform_num * args.seq_in)
+            averaged_nfe_enc = engine.model.encoder.ode_func.nfe / engine.model.encoder.ode_dynamics.perform_num
             averaged_nfe_dec = engine.model.decoder.ode_func.nfe / (
                     engine.model.decoder.ode_dynamics.perform_num * args.seq_out)
             averaged_nfe_record_enc.append(averaged_nfe_enc)
@@ -200,8 +203,7 @@ def main():
             valid_mape = np.mean(valid_mape, axis=0)
             valid_rmse = np.mean(valid_rmse, axis=0)
 
-        averaged_nfe_enc = engine.model.encoder.ode_func.nfe / (
-                engine.model.encoder.ode_dynamics.perform_num * args.seq_in)
+        averaged_nfe_enc = engine.model.encoder.ode_func.nfe / engine.model.encoder.ode_dynamics.perform_num
         averaged_nfe_dec = engine.model.decoder.ode_func.nfe / (
                 engine.model.decoder.ode_dynamics.perform_num * args.seq_out)
         averaged_nfe_record_enc.append(averaged_nfe_enc)
