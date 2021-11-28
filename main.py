@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:5")
+parser.add_argument("--device", type=str, default="cuda:0")
 parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
@@ -22,7 +22,6 @@ parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight
 parser.add_argument("--comment", type=str, default="PEMS-D4_multi_input1",
                     help='whether recording')
 parser.add_argument("--recording", type=bool, default=False, help='whether recording')
-
 
 # python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
 
@@ -104,6 +103,7 @@ def main():
         args.adj_mx = torch.Tensor(utils.load_pickle(args.adj_data)[-1])
     else:
         args.adj_mx, _ = torch.Tensor(utils.get_adjacency_matrix(args.adj_data, args.num_node))
+    args.adj_mx = args.adj_mx.to(args.device)
     dataloader = utils.load_dataset(args.data_file, args.batch_size, args.batch_size, args.batch_size)
     args.scaler = dataloader['scaler']
 

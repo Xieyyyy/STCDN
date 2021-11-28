@@ -1,9 +1,9 @@
-from .tsit5 import Tsit5Solver
-from .dopri5 import Dopri5Solver
-from .fixed_grid import Euler, Midpoint, RK4
-from .fixed_adams import AdamsBashforth, AdamsBashforthMoulton
 from .adams import VariableCoefficientAdamsBashforth
+from .dopri5 import Dopri5Solver
+from .fixed_adams import AdamsBashforth, AdamsBashforthMoulton
+from .fixed_grid import Euler, Midpoint, RK4
 from .misc import _check_inputs
+from .tsit5 import Tsit5Solver
 
 SOLVERS = {
     'explicit_adams': AdamsBashforth,
@@ -17,7 +17,7 @@ SOLVERS = {
 }
 
 
-def odeint(func, y0, t, rtol=1e-7, atol=1e-9, method=None, options=None):
+def odeint(func, y0, t, rtol=1e-7, atol=1e-9, method=None, options=None, **kwargs):
     """Integrate a system of ordinary differential equations.
 
     Solves the initial value problem for a non-stiff system of first order ODEs:
@@ -69,7 +69,7 @@ def odeint(func, y0, t, rtol=1e-7, atol=1e-9, method=None, options=None):
         method = 'dopri5'
 
     solver = SOLVERS[method](func, y0, rtol=rtol, atol=atol, **options)
-    solution = solver.integrate(t)
+    solution = solver.integrate(t, **kwargs)
 
     if tensor_input:
         solution = solution[0]

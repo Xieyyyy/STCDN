@@ -15,11 +15,11 @@ class Model(nn.Module):
         self.decoder = Decoder(args=args)
 
     def forward(self, x):
-        hidden_state = self.encoder(x)
+        hidden_state = self.encoder(x, self.args.adj_mx)
         hidden_state = self.hidden_transformation(hidden_state)
         if self.args.decoder_interval == None:
             out = self.decoder(hidden_state)
             return out
         else:
-            continous_out, decrete_out = self.decoder(hidden_state)
+            continous_out, decrete_out = self.decoder(hidden_state, self.args.adj_mx)
             return continous_out, decrete_out
