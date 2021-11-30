@@ -10,8 +10,8 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:5")
-parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
+parser.add_argument("--device", type=str, default="cuda:3")
+parser.add_argument('--data', type=str, default='PEMS-D860', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=520, help='random seed')
@@ -19,10 +19,9 @@ parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="PEMS-D4_multi_input1",
+parser.add_argument("--comment", type=str, default="PEMS-D860_lb1_interval5",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=False, help='whether recording')
-
+parser.add_argument("--recording", type=bool, default=True, help='whether recording')
 
 # python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
 
@@ -34,7 +33,7 @@ parser.add_argument("--seq_in", type=int, default=12, help='historical length')
 parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
 
 # ---for encoder----
-parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--encoder_interval", type=int, default=5, help="interval of ODE")
 parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
@@ -43,24 +42,16 @@ parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of
 
 # ---for decoder----
 parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
-parser.add_argument("--decoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--decoder_interval", type=int, default=5, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
 parser.add_argument("--decoder_scale", type=float, default=0.01, help='scaler of T')
-parser.add_argument("--back_look", type=int, default=3, help='back look')
+parser.add_argument("--back_look", type=int, default=1, help='back look')
 
 args = parser.parse_args()
 
-if args.data == "METR-LA":
-    args.data_file = "./data/METR-LA"
-    args.adj_data = "./data/sensor_graph/adj_mx.pkl"
-    args.num_node = 207
-    args.in_dim = 1
-    args.task = "speed"
-
-
-elif args.data == "PEMS-D3":
+if args.data == "PEMS-D3":
     args.data_file = "./data/PEMS-D3"
     args.adj_data = "./data/sensor_graph/pems03.csv"
     args.num_node = 358
@@ -87,6 +78,15 @@ elif args.data == "PEMS-D8":
     args.num_node = 170
     args.in_dim = 1
     args.task = "flow"
+
+elif args.data == "PEMS-D860":
+    args.data_file = "../../GraphWaveNet/Graph-WaveNet/data/PEMS-D860"
+    args.adj_data = "../../GraphWaveNet/Graph-WaveNet/data/PEMS-D860/distance_pemsd8.csv"
+    args.num_node = 170
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 60, 5))
+    y_idx = list(np.arange(0, 60, 5))
 
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
@@ -124,8 +124,8 @@ def main():
         t1 = time.time()
         dataloader['train_loader'].shuffle()
         for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
-            trainX = torch.Tensor(x).to(args.device)
-            trainy = torch.Tensor(y).to(args.device)
+            trainX = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
+            trainy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
 
             if args.task == "speed":
                 metrics = engine.train(trainX[..., 0:1], trainy[..., 0:1])
@@ -169,8 +169,8 @@ def main():
         s1 = time.time()
         # dataloader['test_loader'].shuffle()
         for iter, (x, y) in enumerate(dataloader['test_loader'].get_iterator()):
-            valx = torch.Tensor(x).to(args.device)
-            valy = torch.Tensor(y).to(args.device)
+            valx = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
+            valy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
             if args.task == "speed":
                 metrics = engine.eval(valx[..., 0:1], valy[..., 0:1])
                 valid_loss.append(metrics[0])
@@ -285,8 +285,8 @@ def main():
                                (t2 - t1)),
                     "./records/" + args.comment)
 
-        # if epoch_num % 50 == 0:
-        #     torch.save(engine.model, "./model_d4_60_lr2e-4.pkl")
+        if epoch_num % 50 == 0:
+            torch.save(engine.model, "./PEMS-D860.pkl")
         # torch.save(engine.model.state_dict(), './parameter_12.pkl')
         print("Average Training Time: {:.4f} secs/epoch".format(np.mean(train_time)))
         print("Average Inference Time: {:.4f} secs".format(np.mean(val_time)))
