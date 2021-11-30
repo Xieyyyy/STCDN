@@ -1,6 +1,6 @@
 import torch
+import torch.nn as nn
 import torch.optim as op
-
 import utils
 from model import Model
 
@@ -8,7 +8,8 @@ from model import Model
 class Holder():
     def __init__(self, args):
         self.args = args
-        self.model = Model(args).to(self.args.device)
+        self.model = Model(args)
+        self.model = nn.DataParallel(self.model, device_ids=[0, 1]).to(self.args.device)
         self.optimizer = op.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
         self.lr_sch = op.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=0.996, verbose=True)
         self.loss = utils.masked_mae
