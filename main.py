@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 
 # ---for training----
 parser.add_argument("--device", type=str, default="cuda")
-parser.add_argument('--data', type=str, default='PEMS-D7', help='dataset')
+parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=520, help='random seed')
@@ -107,7 +107,7 @@ def main():
         args.adj_mx = torch.Tensor(utils.load_pickle(args.adj_data)[-1])
     else:
         args.adj_mx, _ = torch.Tensor(utils.get_adjacency_matrix(args.adj_data, args.num_node))
-    dataloader = utils.load_dataset(args.data_file, args.batch_size, args.batch_size, args.batch_size)
+    dataloader = utils.load_dataset(args.data_file, args.batch_size)
     args.scaler = dataloader['scaler']
 
     print(str(args))
@@ -125,12 +125,12 @@ def main():
         train_mape = []
         train_rmse = []
         t1 = time.time()
-        dataloader['train_loader'].shuffle()
-        for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
+        # dataloader['train_loader'].shuffle()
+        for iter, (trainX, trainy) in enumerate(dataloader["train_loader"]):
             # trainX = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # trainy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
-            trainX = torch.Tensor(x).to(args.device)
-            trainy = torch.Tensor(y).to(args.device)
+            trainX = trainX.to(args.device)
+            trainy = trainy.to(args.device)
 
             if args.task == "speed":
                 metrics = engine.train(trainX[..., 0:1], trainy[..., 0:1])
@@ -173,16 +173,16 @@ def main():
         averaged_nfe_record_dec = []
         s1 = time.time()
         # dataloader['test_loader'].shuffle()
-        for iter, (x, y) in enumerate(dataloader['test_loader'].get_iterator()):
-            valx = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
-            valy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
+        for iter, (valX, valy) in enumerate(dataloader['test_loader']):
+            valX = valX.to(args.device)
+            valy = valy.to(args.device)
             if args.task == "speed":
-                metrics = engine.eval(valx[..., 0:1], valy[..., 0:1])
+                metrics = engine.eval(valX[..., 0:1], valy[..., 0:1])
                 valid_loss.append(metrics[0])
                 valid_mape.append(metrics[1])
                 valid_rmse.append(metrics[2])
             elif args.task == "flow":
-                metrics = engine.eval(valx[..., 0:1], valy[..., 0:1])
+                metrics = engine.eval(valX[..., 0:1], valy[..., 0:1])
                 valid_loss.append(metrics[0])
                 valid_mape.append(metrics[1])
                 valid_rmse.append(metrics[2])

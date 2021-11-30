@@ -3,42 +3,7 @@ import pickle
 
 import numpy as np
 import torch
-
-
-class DataLoader:
-    def __init__(self, xs, ys, batch_size, pad_with_last_sample=True):
-        self.batch_size = batch_size
-        self.current_idx = 0
-        if pad_with_last_sample:
-            num_padding = (batch_size - (len(xs) % batch_size)) % batch_size
-            x_padding = np.repeat(xs[-1:], num_padding, axis=0)
-            y_padding = np.repeat(ys[-1:], num_padding, axis=0)
-            xs = np.concatenate([xs, x_padding], axis=0)
-            ys = np.concatenate([ys, y_padding], axis=0)
-        self.size = len(xs)
-        self.num_batch = int(self.size // self.batch_size)
-        self.xs = xs
-        self.ys = ys
-
-    def shuffle(self):
-        permutations = np.random.permutation(self.size)
-        xs, ys = self.xs[permutations], self.ys[permutations]
-        self.xs = xs
-        self.ys = ys
-
-    def get_iterator(self):
-        self.current_idx = 0
-
-        def _wrapper():
-            while self.current_idx < self.num_batch:
-                start_idx = self.batch_size * self.current_idx
-                end_idx = min(self.size, self.batch_size * (self.current_idx + 1))
-                x_i = self.xs[start_idx:end_idx, ...]
-                y_i = self.ys[start_idx:end_idx, ...]
-                yield (x_i, y_i)
-                self.current_idx += 1
-
-        return _wrapper()
+from torch.utils.data import DataLoader, TensorDataset
 
 
 class StandardScalar:
@@ -130,7 +95,7 @@ def get_adjacency_matrix(distance_df_filename, num_of_vertices, id_filename=None
             return A, distaneA
 
 
-def load_dataset(dataset_dir, batch_size, valid_batch_size=None, test_batch_size=None):
+def load_dataset(dataset_dir, batch_size):
     data = {}
     for category in ['train', 'val', 'test']:
         cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
@@ -140,9 +105,8 @@ def load_dataset(dataset_dir, batch_size, valid_batch_size=None, test_batch_size
     # Data format
     for category in ['train', 'val', 'test']:
         data['x_' + category][..., 0] = scaler.transform(data['x_' + category][..., 0])
-    data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size)
-    data['val_loader'] = DataLoader(data['x_val'], data['y_val'], valid_batch_size)
-    data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size)
+        dataset = TensorDataset(torch.Tensor(data['x_' + category]), torch.Tensor(data['y_' + category]))
+        data[category + "_loader"] = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     data['scaler'] = scaler
     return data
 
