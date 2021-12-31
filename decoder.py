@@ -1,10 +1,8 @@
-import dgl
 import numpy as np
 import torch
 import torch.nn as nn
 import torchdiffeq
 from gat import GATDecoder as GAT
-from scipy import sparse as sp
 
 
 class Decoder(nn.Module):
@@ -20,10 +18,9 @@ class Decoder(nn.Module):
                 np.arange(self.args.decoder_interval, self.args.decoder_interval * (self.args.seq_out + 1),
                           self.args.decoder_interval))
 
-        self.graph = self._generate_graph().to(self.args.device)
         self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim * self.args.back_look,
                             out_dim=self.args.hidden_dim, num_layers=1,
-                            dropout=self.args.dropout, num_heads=self.args.num_heads, graph=self.graph)
+                            dropout=self.args.dropout, num_heads=self.args.num_heads)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.decoder_rtol,
                                        atol=self.args.decoder_atol,
                                        adjoint=self.args.decoder_adjoint, method=self.args.decoder_integrate_mathod)
@@ -31,7 +28,8 @@ class Decoder(nn.Module):
                                           nn.Tanh(),
                                           nn.Linear(self.args.hidden_dim, self.args.out_dim, bias=True))
 
-    def forward(self, y0):
+    def forward(self, y0, graph):
+        self.ode_func.set_graph(graph)
         y0 = y0.squeeze(1)
         out = self.ode_dynamics(self.T, y0).transpose(0, 1)
         out = self.output_layer(out)
@@ -39,12 +37,6 @@ class Decoder(nn.Module):
             return out, None
         else:
             return out[:, 1:, :, :], out[:, self.id_train, :, :]
-
-    def _generate_graph(self):
-        adj_mx = sp.csr_matrix(self.args.adj_mx)
-        graph = dgl.from_scipy(adj_mx, eweight_name='w')
-        # batch_graph = dgl.batch([graph for _ in range(self.args.batch_size)])
-        return graph
 
 
 class ODEDynamic(nn.Module):

@@ -1,10 +1,8 @@
-import dgl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchdiffeq
 from gat import GATEncoder as GAT
-from scipy import sparse as sp
 
 
 class Encoder(nn.Module):
@@ -13,10 +11,9 @@ class Encoder(nn.Module):
         self.args = args
         self.linear_in = nn.Linear(self.args.in_dim, self.args.hidden_dim)
         self.T = torch.linspace(0., 1., self.args.encoder_interval + 1) * self.args.encoder_scale
-        self.graph = self._generate_graph().to(self.args.device)
 
         self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim, out_dim=self.args.hidden_dim, num_layers=1,
-                            dropout=self.args.dropout, num_heads=self.args.num_heads, graph=self.graph)
+                            dropout=self.args.dropout, num_heads=self.args.num_heads)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.encoder_rtol, atol=self.args.encoder_atol,
                                        adjoint=self.args.encoder_adjoint, method=self.args.encoder_integrate_mathod)
 
@@ -25,14 +22,14 @@ class Encoder(nn.Module):
                                           nn.Linear(self.args.hidden_dim, self.args.hidden_dim, bias=True))
         self.W = nn.Linear(self.args.hidden_dim, self.args.hidden_dim)
         self.U = nn.Linear(self.args.hidden_dim, self.args.hidden_dim)
-        self.layer_norm = nn.LayerNorm([self.args.hidden_dim],
-                                       elementwise_affine=False)
+        self.layer_norm = nn.LayerNorm([self.args.hidden_dim], elementwise_affine=False)
 
-    def forward(self, inputs):
+    def forward(self, inputs, graph):
         inputs = self.linear_in(inputs)
         x = inputs[:, 0, :, :].contiguous().squeeze(1)
         ret = x
         for idx in range(self.args.seq_in):
+            self.ode_func.set_graph(graph)
             ret = self.ode_dynamics(self.T, ret)[-1]
             if idx != 0:
                 input = inputs[:, idx, :, :].contiguous().squeeze(1)
@@ -42,11 +39,6 @@ class Encoder(nn.Module):
         out = out.transpose(0, 1)
         out = self.output_layer(out)
         return out
-
-    def _generate_graph(self):
-        adj_mx = sp.csr_matrix(self.args.adj_mx)
-        graph = dgl.from_scipy(adj_mx, eweight_name='w')
-        return graph
 
 
 class ODEDynamic(nn.Module):

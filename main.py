@@ -10,16 +10,16 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:3")
-parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
-parser.add_argument('--batch_size', type=int, default=64, help='batch size')
-parser.add_argument('--epochs', type=int, default=200, help='training epoch')
+parser.add_argument("--device", type=str, default="cuda:6")
+parser.add_argument('--data', type=str, default='PEMS-D3', help='dataset')
+parser.add_argument('--batch_size', type=int, default=32, help='batch size')
+parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
 parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="D8_baseline",
+parser.add_argument("--comment", type=str, default="D3_adaptive",
                     help='whether recording')
 parser.add_argument("--recording", type=bool, default=True, help='whether recording')
 
@@ -27,13 +27,15 @@ parser.add_argument("--recording", type=bool, default=True, help='whether record
 
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
-parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension')
+parser.add_argument('--hidden_dim', type=int, default=128, help='hidden dimension')
 parser.add_argument('--out_dim', type=int, default=1, help='output dimension')
 parser.add_argument("--seq_in", type=int, default=12, help='historical length')
 parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
+parser.add_argument("--graph", type=str, default="adap", help='the type of graph')
+parser.add_argument("--retain_ratio", type=float, default=0.05, help="the ratio of retaining edges")
 
 # ---for encoder----
-parser.add_argument("--encoder_interval", type=int, default=2, help="interval of ODE")
+parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
 parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
@@ -42,7 +44,7 @@ parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of
 
 # ---for decoder----
 parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
-parser.add_argument("--decoder_interval", type=int, default=2, help="interval of ODE")
+parser.add_argument("--decoder_interval", type=int, default=3, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
@@ -57,6 +59,14 @@ if args.data == "PEMS-D3":
     args.num_node = 358
     args.in_dim = 1
     args.task = "flow"
+
+elif args.data == "METR-LA":
+    args.data_file = "./data/METR-LA"
+    args.adj_data = "./data/sensor_graph/adj_mx.pkl"
+    args.num_node = 207
+    args.in_dim = 1
+    args.task = "speed"
+
 
 elif args.data == "PEMS-D4":
     args.data_file = "./data/PEMS-D4"
@@ -90,7 +100,7 @@ elif args.data == "PEMS-D860":
 
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
-    utils.record_info("D8_baseline",
+    utils.record_info("D3_adaptive",
                       "./records/" + args.comment)
     sw = SummaryWriter(comment=args.comment)
 
@@ -100,10 +110,13 @@ args.device = torch.device(args.device)
 
 
 def main():
-    if args.task == "speed":
-        args.adj_mx = torch.Tensor(utils.load_pickle(args.adj_data)[-1])
+    if args.graph == "geo":
+        if args.task == "speed":
+            args.adj_mx = torch.Tensor(utils.load_pickle(args.adj_data)[-1])
+        else:
+            args.adj_mx, _ = torch.Tensor(utils.get_adjacency_matrix(args.adj_data, args.num_node))
     else:
-        args.adj_mx, _ = torch.Tensor(utils.get_adjacency_matrix(args.adj_data, args.num_node))
+        args.adj_mx = torch.ones(args.num_node, args.num_node)
     dataloader = utils.load_dataset(args.data_file, args.batch_size, args.batch_size, args.batch_size)
     args.scaler = dataloader['scaler']
 
