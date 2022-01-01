@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:6")
+parser.add_argument("--device", type=str, default="cuda:4")
 parser.add_argument('--data', type=str, default='PEMS-D3', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
@@ -19,9 +19,9 @@ parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="D3_adaptive",
+parser.add_argument("--comment", type=str, default="D3_adaptive(gen)",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=True, help='whether recording')
+parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
 # python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
 

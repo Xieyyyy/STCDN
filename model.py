@@ -19,8 +19,7 @@ class Model(nn.Module):
         if args.graph == "geo":
             self.graph = self._generate_graph().to(self.args.device)
         else:
-            complete_graph = self._generate_graph().to(self.args.device)
-            self.graph_learner = GraphLearner(self.args, complete_graph)
+            self.graph_learner = GraphLearner(self.args)
 
     def forward(self, x):
         if self.args.graph != "geo":
