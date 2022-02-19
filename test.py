@@ -1,147 +1,116 @@
-import pickle
+import argparse
 
 import numpy as np
 import torch
-# import util
 import utils
-# from model import *
-# import ASTGCN_r
-from scipy.interpolate import interp1d
 
-# param_dict = torch.load("./garage/pemsd4_epoch_32_105.3.pth")
+parser = argparse.ArgumentParser()
+parser.add_argument("--device", type=str, default="cuda:1", help='device name')
+parser.add_argument('--data', type=str, default='./data/PEMS-D360', help='dataset')
+parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+parser.add_argument("--seq_in", type=int, default=12, help='historical length')
+parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
+parser.add_argument("--scale", type=float, default=0.01, help='scaler of T')
+parser.add_argument("--interval", type=int, default=5, help="interval of ODE")
+args = parser.parse_args()
 
-adj_mx, distance_mx = utils.get_adjacency_matrix("../../GraphWaveNet/Graph-WaveNet/data/PEMS-D860/distance_pemsd8.csv",
-                                                 170)
-dataloader = utils.load_dataset("../../GraphWaveNet/Graph-WaveNet/data/PEMS-D860/", 32, 32, 32)
-scaler = dataloader['scaler']
+if args.data == "METR-LA":
+    args.data_file = "./data/METR-LA"
+    args.adj_data = "./data/sensor_graph/adj_mx.pkl"
+    args.num_node = 207
+    args.in_dim = 2
+    args.task = "speed"
 
-# model = ASTGCN_r.make_model("cuda:1", 2, 1, 3, 64, 64, 1, adj_mx,
-#                             12, 12, 170)
-# model = gwnet("cuda:1", 307, 0.3, supports=[torch.tensor(i).to("cuda:1") for i in adj_mx], gcn_bool=False,
-#               addaptadj=False, aptinit=torch.zeros(307).to("cuda:1"), in_dim=1, out_dim=12, residual_channels=32,
-#               dilation_channels=32, skip_channels=32 * 8, end_channels=32 * 16)
-# model.load_state_dict(param_dict)
+elif args.data == "PEMS-BAY":
+    args.data_file = "./data/PEMS-BAY"
+    args.adj_data = "./data/sensor_graph/adj_mx_bay.pkl"
+    args.num_node = 325
+    args.in_dim = 2
+    args.task = "speed"
 
-model = torch.load("./PEMS-D860.pkl", map_location="cuda:2")
+elif args.data == "PEMS-D360":
+    args.data_file = "./data/PEMS-D360"
+    args.adj_data = "./data/sensor_graph/pems03.csv"
+    args.num_node = 358
+    args.in_dim = 1
+    args.task = "flow"
 
-model.eval()
-test_mae = []
-test_mape = []
-test_rmse = []
-x_idx = list(np.arange(0, 12 * 5, 5))
-y_idx = list(np.arange(0, 12 * 5, 5))
+elif args.data == "PEMS-D4":
+    args.data_file = "./data/PEMS-D4"
+    args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
+    args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
 
+elif args.data == "PEMS-D460":
+    args.data_file = "./data/PEMS-D4-60"
+    args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
+    args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
 
-def lagrangeInterp(x, y, xi):
-    '''
+elif args.data == "PEMS-D8":
+    args.data_file = "./data/PEMS-D8"
+    args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
+    args.num_node = 170
+    args.in_dim = 1
+    args.task = "flow"
 
-    :param x: [0,1,2,3,4,5,6,7,8,9,10,11]
-    :param y: values
-    :param xi: point
-    :return:
-    '''
-    n = len(x)  # T
-    L = np.zeros(n)  # T
+elif args.data == "PEMS-D860":
+    args.data_file = "./data/PEMS-D860"
+    args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
+    args.num_node = 170
+    args.in_dim = 1
+    args.task = "flow"
 
-    for k in range(0, n):
-
-        L[k] = 1
-
-        for p in range(0, n):
-
-            if p != k:
-                L[k] = L[k] * (xi - x[p]) / (x[k] - x[p])
-
-    yi = sum(y * L)
-
-    return yi
-
-
-def lagrangeInterptensor(x, y, xi):
-    '''
-
-    :param x: T
-    :param y: [b,n]
-    :param xi: point
-    :return:
-    '''
-    n = len(x)  # T
-    L = torch.zeros(y.shape).to("cuda:2")  # [0] * 12
-
-    for k in range(0, n):
-
-        L[k] = 1
-
-        for p in range(0, n):
-
-            if p != k:
-                L[k] = L[k] * (xi - x[p]) / (x[k] - x[p])
-
-    yi = sum(y * L)
-
-    return yi
+dataloader = utils.load_dataset(args.data, args.batch_size, args.batch_size, args.batch_size)
+args.scaler = dataloader['scaler']
+args.device = torch.device(args.device)
 
 
-def interpolationtensor(y):
-    X = np.arange(0, 12, 1)
-    Xi = np.arange(0, 12, 0.2)
-    y = y.squeeze().transpose(-1, 0)  # [b,T,N]
-    res = [lagrangeInterptensor(X, y, xi) for xi in Xi]
-    res = torch.stack(res)  # [60,32,307]
-    return res.permute(2, 0, 1)
-
-
-def otherinterpolation(y):
-    y = y.transpose(-1, -2).cpu().numpy()
-    x = np.linspace(0, 11, num=12, endpoint=True)
-    f1 = interp1d(x, y, kind='nearest')
-    f2 = interp1d(x, y, kind='linear')
-    f3 = interp1d(x, y, kind='quadratic')
-    f4 = interp1d(x, y, kind='cubic')
-    xnew = np.linspace(0, 11, num=60, endpoint=True)
-    return torch.Tensor(f1(xnew)).to("cuda:2"), \
-           torch.Tensor(f2(xnew)).to("cuda:2"), \
-           torch.Tensor(f3(xnew)).to("cuda:2"), \
-           torch.Tensor(f4(xnew)).to("cuda:2")
-
-
-def main():
+def test():
+    # T = torch.linspace(0., args.seq_out, args.interval * args.seq_out + 1) * args.scale
+    # id_train = list(np.arange(args.interval, args.interval * (args.seq_out + 1), args.interval))
+    model = torch.load("./PEMS-D360.pkl", map_location=args.device)
+    # model.decoderr.T = T
+    # model.decoder.id_train = id_train
+    # model.decoder.args.seq_out = args.seq_out
+    # model.encoder.args.seq_in = args.seq_in
+    model.eval()
     test_mae = []
     test_mape = []
     test_rmse = []
+
+    x_idx = list(np.arange(0, 60, 5))
+    y_idx = list(np.arange(0, 60, 5))
+
     for iter, (x, y) in enumerate(dataloader["test_loader"].get_iterator()):
-        testX = torch.Tensor(x).to("cuda:2")[:, x_idx, :, :]
-        # testX = testX.transpose(1, 3)
-        testy = torch.Tensor(y).to("cuda:2")
-        # testX = nn.functional.pad(testX, (1, 0, 0, 0))
+        x = x[:, x_idx, :, :]
+        testX = torch.Tensor(x).to(args.device)
+        testy = torch.Tensor(y).to(args.device)
+
         with torch.no_grad():
-            outputs = model(testX)  # [32,1,307,13]
-        prediction = scaler.inv_transform(outputs[0])
-        # with open("./truth.pkl", "wb") as f:
-        #     pickle.dump(testy, f)
-        # with open("./cstn.pkl", "wb") as f:
+            continous_outputs, decrete_outputs = model(testX[:, -args.seq_in:, :, :])
+        testy = testy[:, :, :, 0:1]
+        prediction = args.scaler.inv_transform(continous_outputs)
+        # with open("./pred.pkl", "wb") as f:
         #     pickle.dump(prediction, f)
-        # results = interpolationtensor(prediction.transpose(1, 2))  # [B,N,T]
-        # results = results.unsqueeze(-1)
-        # nearest, linear, quadratic, cubic = otherinterpolation(prediction)  # [B,N,T]
-        # nearest, linear, quadratic, cubic = nearest.transpose(1, 2).unsqueeze(-1), linear.transpose(1, 2).unsqueeze(
-        #     -1), quadratic.transpose(1, 2).unsqueeze(-1), cubic.transpose(1, 2).unsqueeze(-1)
-
-        # with open("./label.pkl", "wb") as f:
+        # with open("./lebels.pkl", "wb") as f:
         #     pickle.dump(testy, f)
-
         mae = utils.masked_mae(prediction, testy, 0.0).item()
         rmse = utils.masked_rmse(prediction, testy, 0.0).item()
         mape = utils.masked_mape(prediction, testy, 0.0).item()
+        log = 'Test Loss: {:.4f},  Test MAPE: {:.4f}, Test RMSE: {:.4f}'
+        print(log.format(mae, mape, rmse))
         test_mae.append(mae)
-        test_rmse.append(rmse)
         test_mape.append(mape)
-        print("Iter:" + str(iter) + " mae:" + str(np.mean(np.asarray(test_mae))) + " rmse:" + str(np.mean(
-            np.asarray(test_rmse))) + " mape:" + str(np.mean(np.asarray(test_mape))))
-
-    print(" mae:" + str(np.mean(np.asarray(test_mae))) + " rmse:" + str(np.mean(
-        np.asarray(test_rmse))) + " mape:" + str(np.mean(np.asarray(test_mape))))
+        test_rmse.append(rmse)
+    mae = np.mean(test_mae)
+    mape = np.mean(test_mape)
+    rmse = np.mean(test_rmse)
+    log = 'Test Loss: {:.4f},  Test MAPE: {:.4f}, Test RMSE: {:.4f}'
+    print(log.format(mae, mape, rmse))
 
 
 if __name__ == '__main__':
-    main()
+    test()

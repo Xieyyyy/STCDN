@@ -10,18 +10,18 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:6")
-parser.add_argument('--data', type=str, default='METR-LA', help='dataset')
-parser.add_argument('--batch_size', type=int, default=32, help='batch size')
-parser.add_argument('--epochs', type=int, default=500, help='training epoch')
+parser.add_argument("--device", type=str, default="cuda:1")
+parser.add_argument('--data', type=str, default='PEMS-D3', help='dataset')
+parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+parser.add_argument('--epochs', type=int, default=300, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
 parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.0001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="metr_baseline_lrd10",
+parser.add_argument("--comment", type=str, default="D3",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=False, help='whether recording')
+parser.add_argument("--recording", type=bool, default=True, help='whether recording')
 
 # python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
 
@@ -53,14 +53,7 @@ parser.add_argument("--back_look", type=int, default=3, help='back look')
 
 args = parser.parse_args()
 
-if args.data == "PEMS-D3":
-    args.data_file = "./data/PEMS-D3"
-    args.adj_data = "./data/sensor_graph/pems03.csv"
-    args.num_node = 358
-    args.in_dim = 1
-    args.task = "flow"
-
-elif args.data == "METR-LA":
+if args.data == "METR-LA":
     args.data_file = "./data/METR-LA"
     args.adj_data = "./data/sensor_graph/adj_mx.pkl"
     args.num_node = 207
@@ -75,12 +68,39 @@ elif args.data == "PEMS-BAY":
     args.task = "speed"
 
 
+elif args.data == "PEMS-D3":
+    args.data_file = "./data/PEMS-D3"
+    args.adj_data = "./data/sensor_graph/pems03.csv"
+    args.num_node = 358
+    args.in_dim = 1
+    args.task = "flow"
+
+elif args.data == "PEMS-D360":
+    args.data_file = "./data/PEMS-D360"
+    args.adj_data = "./data/sensor_graph/pems03.csv"
+    args.num_node = 358
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 60, 5))
+    y_idx = list(np.arange(0, 60, 5))
+
+
+
 elif args.data == "PEMS-D4":
     args.data_file = "./data/PEMS-D4"
     args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
     args.num_node = 307
     args.in_dim = 1
     args.task = "flow"
+
+elif args.data == "PEMS-D460":
+    args.data_file = "./data/PEMS-D460"
+    args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
+    args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 60, 5))
+    y_idx = list(np.arange(0, 60, 5))
 
 elif args.data == "PEMS-D7":
     args.data_file = "./data/PEMS-D7"
@@ -89,6 +109,15 @@ elif args.data == "PEMS-D7":
     args.in_dim = 1
     args.task = "flow"
 
+elif args.data == "PEMS-D760":
+    args.data_file = "./data/PEMS-D760"
+    args.adj_data = "./data/sensor_graph/PEMS07.csv"
+    args.num_node = 883
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 60, 5))
+    y_idx = list(np.arange(0, 60, 5))
+
 elif args.data == "PEMS-D8":
     args.data_file = "./data/PEMS-D8"
     args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
@@ -96,18 +125,21 @@ elif args.data == "PEMS-D8":
     args.in_dim = 1
     args.task = "flow"
 
+
 elif args.data == "PEMS-D860":
-    args.data_file = "../../GraphWaveNet/Graph-WaveNet/data/PEMS-D860"
-    args.adj_data = "../../GraphWaveNet/Graph-WaveNet/data/PEMS-D860/distance_pemsd8.csv"
+    args.data_file = "./data/PEMS-D860"
+    args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
     args.num_node = 170
     args.in_dim = 1
     args.task = "flow"
     x_idx = list(np.arange(0, 60, 5))
     y_idx = list(np.arange(0, 60, 5))
 
+
+
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
-    utils.record_info("metr_baseline,lr0.001->0.0001",
+    utils.record_info("D3, baseline",
                       "./records/" + args.comment)
     sw = SummaryWriter(comment=args.comment)
 
@@ -146,6 +178,9 @@ def main():
         for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
             # trainX = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # trainy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
+            # x = x[:, x_idx, :, :]
+            # y = y[:, y_idx, :, :]
+            # print(x.shape)
             trainX = torch.Tensor(x).to(args.device)
             trainy = torch.Tensor(y).to(args.device)
 
@@ -193,6 +228,8 @@ def main():
         for iter, (x, y) in enumerate(dataloader['test_loader'].get_iterator()):
             # valx = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # valy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
+            # x = x[:, x_idx, :, :]
+            # y = y[:, y_idx, :, :]
             valx = torch.Tensor(x).to(args.device)
             valy = torch.Tensor(y).to(args.device)
             if args.task == "speed":
@@ -250,7 +287,7 @@ def main():
                 sw.add_scalar('Loss/valid 3', valid_loss[0], global_step=epoch_num)
                 sw.add_scalar('Loss/valid 6', valid_loss[1], global_step=epoch_num)
                 sw.add_scalar('Loss/valid 12', valid_loss[2], global_step=epoch_num)
-                sw.add_scalar('Loss.Valid',valid_loss[3],global_step=epoch_num)
+                sw.add_scalar('Loss.Valid', valid_loss[3], global_step=epoch_num)
                 sw.add_scalar('MAPE/train', mtrain_mape, global_step=epoch_num)
                 sw.add_scalar('MAPE/valid 3', valid_mape[0], global_step=epoch_num)
                 sw.add_scalar('MAPE/valid 6', valid_mape[1], global_step=epoch_num)
@@ -318,13 +355,15 @@ def main():
                                mvalid_rmse,
                                (t2 - t1)),
                     "./records/" + args.comment)
+        engine.lr_sch.step()
 
         # if epoch_num % 50 == 0:
-        #     torch.save(engine.model, "./PEMS-D8-LB1-int5.pkl")
+        #     torch.save(engine.model, "./PEMS-D360_lb4.pkl")
         # torch.save(engine.model.state_dict(), './parameter_12.pkl')
-        print("Average Training Time: {:.4f} secs/epoch".format(np.mean(train_time)))
-        print("Average Inference Time: {:.4f} secs".format(np.mean(val_time)))
-        engine.lr_sch.step()
+    print("Average Training Time: {:.4f} secs/epoch".format(np.mean(train_time)))
+    print("Average Inference Time: {:.4f} secs".format(np.mean(val_time)))
+
+
 
 
 if __name__ == '__main__':
