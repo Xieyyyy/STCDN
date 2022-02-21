@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 # ---for training----
 parser.add_argument("--device", type=str, default="cuda:5")
 parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
-parser.add_argument('--batch_size', type=int, default=32, help='batch size')
+parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=520, help='random seed')
 parser.add_argument("--clip", type=float, default=5., help='gradient clip')

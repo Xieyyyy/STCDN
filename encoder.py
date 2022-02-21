@@ -63,10 +63,10 @@ class ODEDynamic(nn.Module):
         integration_time_vector = vt.type_as(y0)
         if self.adjoint:
             out = torchdiffeq.odeint_adjoint(func=self.ode_func, y0=y0, t=integration_time_vector, rtol=self.rtol,
-                                             atol=self.atol, method=self.method, **kwargs)
+                                             atol=self.atol, method=self.method)
         else:
             out = torchdiffeq.odeint(func=self.ode_func, y0=y0, t=integration_time_vector, rtol=self.rtol,
-                                     atol=self.atol, method=self.method, **kwargs)
+                                     atol=self.atol, method=self.method)
         return out
 
     def reset(self):
