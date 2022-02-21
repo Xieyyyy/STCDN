@@ -10,8 +10,8 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:1")
-parser.add_argument('--data', type=str, default='PEMS-D3', help='dataset')
+parser.add_argument("--device", type=str, default="cuda:3")
+parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--epochs', type=int, default=300, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
@@ -21,7 +21,7 @@ parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
 parser.add_argument("--comment", type=str, default="D3",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=True, help='whether recording')
+parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
 # python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
 
@@ -49,7 +49,7 @@ parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
 parser.add_argument("--decoder_scale", type=float, default=0.01, help='scaler of T')
-parser.add_argument("--back_look", type=int, default=3, help='back look')
+# parser.add_argument("--back_look", type=int, default=3, help='back look')
 
 args = parser.parse_args()
 

@@ -75,7 +75,7 @@ class GATEncoder(nn.Module):
         self.num_heads = num_heads
         self.graph = None
 
-    def forward(self, vt=None, features=None, **kwargs):
+    def forward(self, vt=None, features=None):
         self.nfe += 1
         x = features
         out = []
@@ -112,14 +112,8 @@ class GATDecoder(nn.Module):
         self.num_heads = num_heads
         self.graph = None
 
-    def forward(self, vt=None, features=None, **kwargs):
+    def forward(self, vt=None, features=None):
         self.nfe += 1
-        if len(kwargs['solutions']) < self.args.back_look:
-            back_look_feat = torch.cat([solution[0] for solution in kwargs['solutions']], dim=-1)
-            pad_len = self.args.hidden_dim * (self.args.back_look - len(kwargs['solutions']))
-            features = F.pad(back_look_feat, (pad_len, 0, 0, 0, 0, 0))
-        else:
-            features = torch.cat([solution[0] for solution in kwargs['solutions'][-self.args.back_look:]], dim=-1)
         x = features
         out = []
         for idx, layer in enumerate(self.gat_layers):

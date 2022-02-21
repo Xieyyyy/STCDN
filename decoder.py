@@ -18,7 +18,7 @@ class Decoder(nn.Module):
                 np.arange(self.args.decoder_interval, self.args.decoder_interval * (self.args.seq_out + 1),
                           self.args.decoder_interval))
 
-        self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim * self.args.back_look,
+        self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim,
                             out_dim=self.args.hidden_dim, num_layers=1,
                             dropout=self.args.dropout, num_heads=self.args.num_heads)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.decoder_rtol,
