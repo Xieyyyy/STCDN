@@ -10,8 +10,8 @@ from torch.utils.tensorboard import SummaryWriter
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:7")
-parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
+parser.add_argument("--device", type=str, default="cuda:1")
+parser.add_argument('--data', type=str, default='PEMS-D4', help='dataset')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
@@ -19,9 +19,9 @@ parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.001, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="D8_look_back",
+parser.add_argument("--comment", type=str, default="D4_look_back",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=True, help='whether recording')
+parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
 # python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
 
@@ -100,7 +100,7 @@ elif args.data == "PEMS-D860":
 
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
-    utils.record_info("D8,look_back",
+    utils.record_info("D4,look_back",
                       "./records/" + args.comment)
     sw = SummaryWriter(comment=args.comment)
 
