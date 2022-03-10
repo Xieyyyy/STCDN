@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.optim as op
+
 import utils
 from model import Model
 
@@ -40,17 +41,15 @@ class Holder():
         return loss.item(), mape, rmse
 
     def eval(self, inputs, reals):
-
+        out_idx = list(np.arange(0, 48, 2))
         self.model.eval()
         with torch.no_grad():
             if self.args.decoder_interval == None:
                 decrete_outputs = self.model(inputs)
             else:
                 continous_outputs, decrete_outputs = self.model(inputs)
-                # continous_outputs = continous_outputs[:, self.extraction, :, :]
-        # reals = reals[:, :self.args.seq_out, :, :]
-        prediction = self.args.scaler.inv_transform(decrete_outputs)
-        # print(continous_outputs.shape)
+                continous_outputs = continous_outputs[:, out_idx, :, :]
+        prediction = self.args.scaler.inv_transform(continous_outputs)
         if self.args.task == "speed":
             maes = [self.loss(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
                     self.loss(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),

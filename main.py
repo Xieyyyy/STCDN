@@ -11,16 +11,16 @@ from holder import Holder
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:1")
-parser.add_argument('--data', type=str, default='PEMS-D8E3', help='dataset')
-parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+parser.add_argument("--device", type=str, default="cuda:2")
+parser.add_argument('--data', type=str, default='PEMS-D8E2', help='dataset')
+parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
 parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.003, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.00001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="D8E3_baseline",
+parser.add_argument("--comment", type=str, default="D8E2_baseline",
                     help='whether recording')
 parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
@@ -37,7 +37,7 @@ parser.add_argument("--retain_ratio", type=float, default=0.1, help="the ratio o
 parser.add_argument("--num_layers", type=int, default=2)
 
 # ---for encoder----
-parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--encoder_interval", type=int, default=4, help="interval of ODE")
 parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
@@ -46,7 +46,7 @@ parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of
 
 # ---for decoder----
 parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
-parser.add_argument("--decoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--decoder_interval", type=int, default=4, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
@@ -137,6 +137,15 @@ elif args.data == "PEMS-D8E3":
     x_idx = list(np.arange(0, 36, 3))
     y_idx = list(np.arange(0, 36, 3))
 
+elif args.data == "PEMS-D8E2":
+    args.data_file = "./data/PEMS-D8E2"
+    args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
+    args.num_node = 170
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 24, 2))
+    y_idx = list(np.arange(0, 24, 2))
+
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
     utils.record_info("D8, baseline，graphemb64，act_prelu,lr提升3,retain0.075",
@@ -178,11 +187,8 @@ def main():
         for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
             # trainX = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # trainy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
-            # x = x[:, x_idx, :, :]
-            # y = y[:, y_idx, :, :]
-            # print(x.shape)
-            # x = x[:, x_idx, :, :]
-            # y = y[:, y_idx, :, :]
+            x = x[:, x_idx, :, :]
+            y = y[:, y_idx, :, :]
             trainX = torch.Tensor(x).to(args.device)
             trainy = torch.Tensor(y).to(args.device)
 
@@ -230,7 +236,7 @@ def main():
         for iter, (x, y) in enumerate(dataloader['test_loader'].get_iterator()):
             # valx = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # valy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
-            # x = x[:, x_idx, :, :]
+            x = x[:, x_idx, :, :]
             # y = y[:, y_idx, :, :]
             valx = torch.Tensor(x).to(args.device)
             valy = torch.Tensor(y).to(args.device)
