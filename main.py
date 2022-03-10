@@ -3,27 +3,28 @@ import time
 
 import numpy as np
 import torch
+from torch.utils.tensorboard import SummaryWriter
+
 import utils
 from holder import Holder
-from torch.utils.tensorboard import SummaryWriter
 
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:5")
-parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
+parser.add_argument("--device", type=str, default="cuda:1")
+parser.add_argument('--data', type=str, default='PEMS-D8E3', help='dataset')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
-parser.add_argument('--epochs', type=int, default=300, help='training epoch')
+parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
 parser.add_argument("--clip", type=float, default=5., help='gradient clip')
 parser.add_argument("--lr", type=float, default=0.003, help='learning rate')
 parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
-parser.add_argument('--weight_decay', type=float, default=0.000001, help='weight decay rate')
-parser.add_argument("--comment", type=str, default="D8_no_backlook_lrx3",
+parser.add_argument('--weight_decay', type=float, default=0.00001, help='weight decay rate')
+parser.add_argument("--comment", type=str, default="D8E3_baseline",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=True, help='whether recording')
+parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
-# python main.py --device cuda:3 --data PEMS-D8 --comment PEMS-D8_multi_input2 --recording True
+# python main.py --device cuda:1 --data PEMS-D8 --lr 0.003 --retain_ratio 0.05 --epochs 500 --comment D8_no_backlook_lrx3_retain005 --recording True
 
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
@@ -32,7 +33,8 @@ parser.add_argument('--out_dim', type=int, default=1, help='output dimension')
 parser.add_argument("--seq_in", type=int, default=12, help='historical length')
 parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
 parser.add_argument("--graph", type=str, default="adap", help='the type of graph')
-parser.add_argument("--retain_ratio", type=float, default=0.025, help="the ratio of retaining edges")
+parser.add_argument("--retain_ratio", type=float, default=0.1, help="the ratio of retaining edges")
+parser.add_argument("--num_layers", type=int, default=2)
 
 # ---for encoder----
 parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
@@ -126,20 +128,18 @@ elif args.data == "PEMS-D8":
     args.task = "flow"
 
 
-elif args.data == "PEMS-D860":
-    args.data_file = "./data/PEMS-D860"
+elif args.data == "PEMS-D8E3":
+    args.data_file = "./data/PEMS-D8E3"
     args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
     args.num_node = 170
     args.in_dim = 1
     args.task = "flow"
-    x_idx = list(np.arange(0, 60, 5))
-    y_idx = list(np.arange(0, 60, 5))
-
-
+    x_idx = list(np.arange(0, 36, 3))
+    y_idx = list(np.arange(0, 36, 3))
 
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
-    utils.record_info("D8, 无backlook,lr提升3",
+    utils.record_info("D8, baseline，graphemb64，act_prelu,lr提升3,retain0.075",
                       "./records/" + args.comment)
     sw = SummaryWriter(comment=args.comment)
 
@@ -181,6 +181,8 @@ def main():
             # x = x[:, x_idx, :, :]
             # y = y[:, y_idx, :, :]
             # print(x.shape)
+            # x = x[:, x_idx, :, :]
+            # y = y[:, y_idx, :, :]
             trainX = torch.Tensor(x).to(args.device)
             trainy = torch.Tensor(y).to(args.device)
 
@@ -362,8 +364,6 @@ def main():
         # torch.save(engine.model.state_dict(), './parameter_12.pkl')
     print("Average Training Time: {:.4f} secs/epoch".format(np.mean(train_time)))
     print("Average Inference Time: {:.4f} secs".format(np.mean(val_time)))
-
-
 
 
 if __name__ == '__main__':

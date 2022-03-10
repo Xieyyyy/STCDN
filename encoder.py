@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchdiffeq
+
 from gat import GATEncoder as GAT
 
 
@@ -12,7 +13,8 @@ class Encoder(nn.Module):
         self.linear_in = nn.Linear(self.args.in_dim, self.args.hidden_dim)
         self.T = torch.linspace(0., 1., self.args.encoder_interval + 1) * self.args.encoder_scale
 
-        self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim, out_dim=self.args.hidden_dim, num_layers=1,
+        self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim, out_dim=self.args.hidden_dim,
+                            num_layers=self.args.num_layers,
                             dropout=self.args.dropout, num_heads=self.args.num_heads)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.encoder_rtol, atol=self.args.encoder_atol,
                                        adjoint=self.args.encoder_adjoint, method=self.args.encoder_integrate_mathod)

@@ -9,8 +9,8 @@ class GraphLearner(nn.Module):
     def __init__(self, args):
         super(GraphLearner, self).__init__()
         self.args = args
-        self.M1 = nn.Parameter(torch.FloatTensor(size=(self.args.num_node, 20)), requires_grad=True)
-        self.M2 = nn.Parameter(torch.FloatTensor(size=(self.args.num_node, 20)), requires_grad=True)
+        self.M1 = nn.Parameter(torch.FloatTensor(size=(self.args.num_node, 64)), requires_grad=True)
+        self.M2 = nn.Parameter(torch.FloatTensor(size=(self.args.num_node, 64)), requires_grad=True)
         self.k = int(self.args.retain_ratio * self.args.num_node * self.args.num_node)
         self._reset_parameters()
 

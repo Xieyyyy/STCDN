@@ -19,7 +19,7 @@ class Decoder(nn.Module):
                           self.args.decoder_interval))
 
         self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim,
-                            out_dim=self.args.hidden_dim, num_layers=1,
+                            out_dim=self.args.hidden_dim, num_layers=self.args.num_layers,
                             dropout=self.args.dropout, num_heads=self.args.num_heads)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.decoder_rtol,
                                        atol=self.args.decoder_atol,

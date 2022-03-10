@@ -66,10 +66,11 @@ class GATEncoder(nn.Module):
         self.initial_value = None
         self.num_layers = num_layers
         self.out_mlp = nn.Linear(num_layers * out_dim, out_dim)
+        # self.actication = nn.PReLU()
         self.gat_layers = nn.ModuleList(
             GATLayer(in_dim=in_dim, out_dim=int(out_dim / num_heads), num_heads=num_heads,
                      feat_drop=dropout, attn_drop=dropout,
-                     activation=F.relu) for _ in range(num_layers))
+                     activation=nn.PReLU()) for _ in range(num_layers))
 
         self.dropout = dropout
         self.num_heads = num_heads
@@ -103,10 +104,11 @@ class GATDecoder(nn.Module):
         self.initial_value = None
         self.num_layers = num_layers
         self.out_mlp = nn.Linear(num_layers * out_dim, out_dim)
+        # self.actication = nn.PReLU()
         self.gat_layers = nn.ModuleList(
             GATLayer(in_dim=in_dim, out_dim=int(out_dim / num_heads), num_heads=num_heads,
                      feat_drop=dropout, attn_drop=dropout,
-                     activation=F.relu) for _ in range(num_layers))
+                     activation=nn.PReLU()) for _ in range(num_layers))
 
         self.dropout = dropout
         self.num_heads = num_heads
