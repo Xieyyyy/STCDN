@@ -11,7 +11,7 @@ class Holder():
         self.args = args
         self.model = Model(args).to(self.args.device)
         self.optimizer = op.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
-        self.lr_sch = op.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=0.995, verbose=True)
+        self.lr_sch = op.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=self.args.lr_decay, verbose=True)
         self.loss = utils.masked_mae
         total_num = sum(p.numel() for p in self.model.parameters())
         trainable_num = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
@@ -41,15 +41,15 @@ class Holder():
         return loss.item(), mape, rmse
 
     def eval(self, inputs, reals):
-        out_idx = list(np.arange(0, 48, 2))
+        # out_idx = list(np.arange(0, self.args.decoder_interval * self.args.seq_out, 1))
         self.model.eval()
         with torch.no_grad():
             if self.args.decoder_interval == None:
                 decrete_outputs = self.model(inputs)
             else:
                 continous_outputs, decrete_outputs = self.model(inputs)
-                continous_outputs = continous_outputs[:, out_idx, :, :]
-        prediction = self.args.scaler.inv_transform(continous_outputs)
+                # continous_outputs = continous_outputs[:, out_idx, :, :]
+        prediction = self.args.scaler.inv_transform(decrete_outputs)
         if self.args.task == "speed":
             maes = [self.loss(prediction[:, 2, :, :], reals[:, 2, :, :], 0.0).item(),
                     self.loss(prediction[:, 5, :, :], reals[:, 5, :, :], 0.0).item(),

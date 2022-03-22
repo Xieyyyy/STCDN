@@ -11,8 +11,8 @@ from holder import Holder
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:2")
-parser.add_argument('--data', type=str, default='PEMS-D8E2', help='dataset')
+parser.add_argument("--device", type=str, default="cuda:3")
+parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
@@ -24,7 +24,7 @@ parser.add_argument("--comment", type=str, default="D8E2_baseline",
                     help='whether recording')
 parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
-# python main.py --device cuda:1 --data PEMS-D8 --lr 0.003 --retain_ratio 0.05 --epochs 500 --comment D8_no_backlook_lrx3_retain005 --recording True
+# python main.py --device cuda:1 --data PEMS-D8E2 --lr 0.003 --retain_ratio 0.1 --epochs 500 --comment D8E2_baseline --recording False
 
 # ---for model----
 parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
@@ -35,9 +35,10 @@ parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
 parser.add_argument("--graph", type=str, default="adap", help='the type of graph')
 parser.add_argument("--retain_ratio", type=float, default=0.1, help="the ratio of retaining edges")
 parser.add_argument("--num_layers", type=int, default=2)
+parser.add_argument("--lr_decay", type=float, default=0.995)
 
 # ---for encoder----
-parser.add_argument("--encoder_interval", type=int, default=4, help="interval of ODE")
+parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
 parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
@@ -46,7 +47,7 @@ parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of
 
 # ---for decoder----
 parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
-parser.add_argument("--decoder_interval", type=int, default=4, help="interval of ODE")
+parser.add_argument("--decoder_interval", type=int, default=3, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
@@ -104,6 +105,42 @@ elif args.data == "PEMS-D460":
     x_idx = list(np.arange(0, 60, 5))
     y_idx = list(np.arange(0, 60, 5))
 
+elif args.data == "PEMS-D4E2":
+    args.data_file = "./data/PEMS-D4E2"
+    args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
+    args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 24, 2))
+    y_idx = list(np.arange(0, 24, 2))
+
+elif args.data == "PEMS-D4E3":
+    args.data_file = "./data/PEMS-D4E3"
+    args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
+    args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 36, 3))
+    y_idx = list(np.arange(0, 36, 3))
+
+elif args.data == "PEMS-D4E4":
+    args.data_file = "./data/PEMS-D4E4"
+    args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
+    args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 48, 4))
+    y_idx = list(np.arange(0, 48, 4))
+
+elif args.data == "PEMS-D4E5":
+    args.data_file = "./data/PEMS-D4E5"
+    args.adj_data = "./data/sensor_graph/distance_pemsd4.csv"
+    args.num_node = 307
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 60, 5))
+    y_idx = list(np.arange(0, 60, 5))
+
 elif args.data == "PEMS-D7":
     args.data_file = "./data/PEMS-D7"
     args.adj_data = "./data/sensor_graph/PEMS07.csv"
@@ -146,6 +183,24 @@ elif args.data == "PEMS-D8E2":
     x_idx = list(np.arange(0, 24, 2))
     y_idx = list(np.arange(0, 24, 2))
 
+elif args.data == "PEMS-D8E4":
+    args.data_file = "./data/PEMS-D8E4"
+    args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
+    args.num_node = 170
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 48, 4))
+    y_idx = list(np.arange(0, 48, 4))
+
+elif args.data == "PEMS-D8E5":
+    args.data_file = "./data/PEMS-D8E5"
+    args.adj_data = "./data/sensor_graph/distance_pemsd8.csv"
+    args.num_node = 170
+    args.in_dim = 1
+    args.task = "flow"
+    x_idx = list(np.arange(0, 60, 5))
+    y_idx = list(np.arange(0, 60, 5))
+
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
     utils.record_info("D8, baseline，graphemb64，act_prelu,lr提升3,retain0.075",
@@ -187,8 +242,8 @@ def main():
         for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
             # trainX = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # trainy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
-            x = x[:, x_idx, :, :]
-            y = y[:, y_idx, :, :]
+            # x = x[:, x_idx, :, :]
+            # y = y[:, y_idx, :, :]
             trainX = torch.Tensor(x).to(args.device)
             trainy = torch.Tensor(y).to(args.device)
 
@@ -236,7 +291,7 @@ def main():
         for iter, (x, y) in enumerate(dataloader['test_loader'].get_iterator()):
             # valx = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # valy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
-            x = x[:, x_idx, :, :]
+            # x = x[:, x_idx, :, :]
             # y = y[:, y_idx, :, :]
             valx = torch.Tensor(x).to(args.device)
             valy = torch.Tensor(y).to(args.device)
