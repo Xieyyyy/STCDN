@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser()
 
 # ---for training----
 parser.add_argument("--device", type=str, default="cuda:1")
-parser.add_argument('--data', type=str, default='PEMS-D8E3', help='dataset')
-parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
+parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
 parser.add_argument("--clip", type=float, default=5., help='gradient clip')
@@ -22,22 +22,21 @@ parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.00001, help='weight decay rate')
 parser.add_argument("--comment", type=str, default="D8E3_baseline",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=False, help='whether recording')
+parser.add_argument("--recording", action='store_true', help='whether recording')
 
 # python main.py --device cuda:1 --data PEMS-D8 --lr 0.003 --retain_ratio 0.05 --epochs 500 --comment D8_no_backlook_lrx3_retain005 --recording True
 
 # ---for model----
-parser.add_argument("--num_heads", type=int, default=8, help='heads (GAT)')
 parser.add_argument('--hidden_dim', type=int, default=128, help='hidden dimension')
 parser.add_argument('--out_dim', type=int, default=1, help='output dimension')
 parser.add_argument("--seq_in", type=int, default=12, help='historical length')
 parser.add_argument("--seq_out", type=int, default=12, help='prediction length')
 parser.add_argument("--graph", type=str, default="adap", help='the type of graph')
 parser.add_argument("--retain_ratio", type=float, default=0.1, help="the ratio of retaining edges")
-parser.add_argument("--num_layers", type=int, default=2)
+parser.add_argument("--alpha", type=float, default=0.95)
 
 # ---for encoder----
-parser.add_argument("--encoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--encoder_interval", type=int, default=2, help="interval of ODE")
 parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
@@ -46,12 +45,21 @@ parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of
 
 # ---for decoder----
 parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
-parser.add_argument("--decoder_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--decoder_interval", type=int, default=2, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
 parser.add_argument("--decoder_adjoint", type=bool, default=False, help='')
 parser.add_argument("--decoder_scale", type=float, default=0.01, help='scaler of T')
 # parser.add_argument("--back_look", type=int, default=3, help='back look')
+
+
+# ---for spatial----
+parser.add_argument("--spatial_integrate_mathod", type=str, default="euler", help='method of ode')
+parser.add_argument("--spatial_interval", type=int, default=3, help="interval of ODE")
+parser.add_argument("--spatial_rtol", type=float, default=.01, help='')
+parser.add_argument("--spatial_atol", type=float, default=.001, help='')
+parser.add_argument("--spatial_adjoint", type=bool, default=False, help='')
+parser.add_argument("--spatial_scale", type=float, default=0.01, help='scaler of T')
 
 args = parser.parse_args()
 
@@ -155,7 +163,7 @@ def main():
         else:
             args.adj_mx, _ = torch.Tensor(utils.get_adjacency_matrix(args.adj_data, args.num_node))
     else:
-        args.adj_mx = torch.ones(args.num_node, args.num_node)
+        args.adj_mx = torch.zeros(args.num_node, args.num_node)
     dataloader = utils.load_dataset(args.data_file, args.batch_size, args.batch_size, args.batch_size)
     args.scaler = dataloader['scaler']
 
@@ -176,13 +184,6 @@ def main():
         t1 = time.time()
         dataloader['train_loader'].shuffle()
         for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
-            # trainX = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
-            # trainy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
-            # x = x[:, x_idx, :, :]
-            # y = y[:, y_idx, :, :]
-            # print(x.shape)
-            # x = x[:, x_idx, :, :]
-            # y = y[:, y_idx, :, :]
             trainX = torch.Tensor(x).to(args.device)
             trainy = torch.Tensor(y).to(args.device)
 

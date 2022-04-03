@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchdiffeq
 
-from gat import GATEncoder as GAT
+from cgnn import CGNN
 
 
 class Encoder(nn.Module):
@@ -13,9 +13,7 @@ class Encoder(nn.Module):
         self.linear_in = nn.Linear(self.args.in_dim, self.args.hidden_dim)
         self.T = torch.linspace(0., 1., self.args.encoder_interval + 1) * self.args.encoder_scale
 
-        self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim, out_dim=self.args.hidden_dim,
-                            num_layers=self.args.num_layers,
-                            dropout=self.args.dropout, num_heads=self.args.num_heads)
+        self.ode_func = CGNN(args=self.args)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.encoder_rtol, atol=self.args.encoder_atol,
                                        adjoint=self.args.encoder_adjoint, method=self.args.encoder_integrate_mathod)
 
@@ -26,12 +24,12 @@ class Encoder(nn.Module):
         self.U = nn.Linear(self.args.hidden_dim, self.args.hidden_dim)
         self.layer_norm = nn.LayerNorm([self.args.hidden_dim], elementwise_affine=False)
 
-    def forward(self, inputs, graph):
+    def forward(self, inputs, adj_mx):
         inputs = self.linear_in(inputs)
         x = inputs[:, 0, :, :].contiguous().squeeze(1)
         ret = x
         for idx in range(self.args.seq_in):
-            self.ode_func.set_graph(graph)
+            self.ode_func.set_adj_mx(adj_mx)
             ret = self.ode_dynamics(self.T, ret)[-1]
             if idx != 0:
                 input = inputs[:, idx, :, :].contiguous().squeeze(1)

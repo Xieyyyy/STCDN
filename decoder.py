@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchdiffeq
-from gat import GATDecoder as GAT
+from cgnn import CGNN
 
 
 class Decoder(nn.Module):
@@ -18,9 +18,7 @@ class Decoder(nn.Module):
                 np.arange(self.args.decoder_interval, self.args.decoder_interval * (self.args.seq_out + 1),
                           self.args.decoder_interval))
 
-        self.ode_func = GAT(args=self.args, in_dim=self.args.hidden_dim,
-                            out_dim=self.args.hidden_dim, num_layers=self.args.num_layers,
-                            dropout=self.args.dropout, num_heads=self.args.num_heads)
+        self.ode_func = CGNN(args=self.args)
         self.ode_dynamics = ODEDynamic(ode_func=self.ode_func, rtol=self.args.decoder_rtol,
                                        atol=self.args.decoder_atol,
                                        adjoint=self.args.decoder_adjoint, method=self.args.decoder_integrate_mathod)
@@ -28,8 +26,8 @@ class Decoder(nn.Module):
                                           nn.Tanh(),
                                           nn.Linear(self.args.hidden_dim, self.args.out_dim, bias=True))
 
-    def forward(self, y0, graph):
-        self.ode_func.set_graph(graph)
+    def forward(self, y0, adj_mx):
+        self.ode_func.set_adj_mx(adj_mx)
         y0 = y0.squeeze(1)
         out = self.ode_dynamics(self.T, y0).transpose(0, 1)
         out = self.output_layer(out)
