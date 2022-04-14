@@ -176,13 +176,6 @@ def main():
         t1 = time.time()
         dataloader['train_loader'].shuffle()
         for iter, (x, y) in enumerate(dataloader["train_loader"].get_iterator()):
-            # trainX = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
-            # trainy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
-            # x = x[:, x_idx, :, :]
-            # y = y[:, y_idx, :, :]
-            # print(x.shape)
-            # x = x[:, x_idx, :, :]
-            # y = y[:, y_idx, :, :]
             trainX = torch.Tensor(x).to(args.device)
             trainy = torch.Tensor(y).to(args.device)
 
