@@ -1,2 +1,2 @@
-# CSTN
-The implementation of STCDN
+# STCDN
+The implementation of Spatial-Temporal Contunuous Dynamic Network
