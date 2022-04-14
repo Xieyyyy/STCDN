@@ -1,2 +1,2 @@
 # CSTN
-The implementation of Continuous Spatial-Temporal Network
+The implementation of STCDN
