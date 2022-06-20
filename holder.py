@@ -14,10 +14,6 @@ class Holder():
         self.loss = utils.masked_mae
         total_num = sum(p.numel() for p in self.model.parameters())
         trainable_num = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        self.extraction = list(
-            np.arange(0, 360,
-                      6))
-        print(len(self.extraction))
         print('Total:', total_num, 'Trainable:', trainable_num)
 
     def train(self, inputs, reals):
