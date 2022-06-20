@@ -11,7 +11,7 @@ from holder import Holder
 parser = argparse.ArgumentParser()
 
 # ---for training----
-parser.add_argument("--device", type=str, default="cuda:5")
+parser.add_argument("--device", type=str, default="cuda:0")
 parser.add_argument('--data', type=str, default='PEMS-D3', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
@@ -22,7 +22,7 @@ parser.add_argument("--dropout", type=float, default=0.2, help='dropout rate')
 parser.add_argument('--weight_decay', type=float, default=0.00001, help='weight decay rate')
 parser.add_argument("--comment", type=str, default="D8_baseline",
                     help='whether recording')
-parser.add_argument("--recording", type=bool, default=True, help='whether recording')
+parser.add_argument("--recording", type=bool, default=False, help='whether recording')
 
 # python main.py --device cuda:5 --data PEMS-D3 --lr 0.002 --retain_ratio 0.1 --epochs 500 --comment D3_baseline --recording True
 
@@ -38,7 +38,7 @@ parser.add_argument("--num_layers", type=int, default=1)
 
 # ---for encoder----
 parser.add_argument("--encoder_interval", type=int, default=2, help="interval of ODE")
-parser.add_argument("--encoder_integrate_mathod", type=str, default="euler", help='method of ode')
+parser.add_argument("--encoder_integrate_mathod", type=str, default="dopri5", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
 parser.add_argument("--encoder_adjoint", type=bool, default=False, help='')
@@ -106,7 +106,7 @@ elif args.data == "PEMS-D8":
 
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
-    utils.record_info("D8, baseline，graphemb64，act_prelu,lr提升3,retain0.075",
+    utils.record_info("D8",
                       "./records/" + args.comment)
     sw = SummaryWriter(comment=args.comment)
 
