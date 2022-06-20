@@ -106,8 +106,8 @@ elif args.data == "PEMS-D8":
 
 if args.recording:
     utils.record_info(str(args), "./records/" + args.comment)
-    utils.record_info("D8",
-                      "./records/" + args.comment)
+    # utils.record_info("D8",
+    #                   "./records/" + args.comment)
     sw = SummaryWriter(comment=args.comment)
 
 torch.manual_seed(args.seed)
