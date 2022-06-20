@@ -1,10 +1,11 @@
 import dgl
 import scipy as sp
 import torch.nn as nn
+from scipy import sparse as sp
+
 from decoder import Decoder
 from encoder import Encoder
 from graph_learner import GraphLearner
-from scipy import sparse as sp
 
 
 class Model(nn.Module):
@@ -32,8 +33,8 @@ class Model(nn.Module):
             out = self.decoder(hidden_state)
             return out
         else:
-            continous_out, decrete_out = self.decoder(hidden_state, graph)
-            return continous_out, decrete_out
+            decrete_out = self.decoder(hidden_state, graph)
+            return decrete_out
 
     def _generate_graph(self):
         adj_mx = sp.csr_matrix(self.args.adj_mx)

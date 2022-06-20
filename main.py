@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 
 # ---for training----
 parser.add_argument("--device", type=str, default="cuda:0")
-parser.add_argument('--data', type=str, default='PEMS-D3', help='dataset')
+parser.add_argument('--data', type=str, default='PEMS-D8', help='dataset')
 parser.add_argument('--batch_size', type=int, default=32, help='batch size')
 parser.add_argument('--epochs', type=int, default=500, help='training epoch')
 parser.add_argument("--seed", type=int, default=42, help='random seed')
@@ -75,10 +75,6 @@ elif args.data == "PEMS-D3":
     args.num_node = 358
     args.in_dim = 1
     args.task = "flow"
-
-
-
-
 
 elif args.data == "PEMS-D4":
     args.data_file = "./data/PEMS-D4"
@@ -153,7 +149,8 @@ def main():
             train_loss.append(metrics[0])
             train_mape.append(metrics[1])
             train_rmse.append(metrics[2])
-            averaged_nfe_enc = engine.model.encoder.ode_func.nfe / engine.model.encoder.ode_dynamics.perform_num
+            averaged_nfe_enc = engine.model.encoder.ode_func.nfe / (
+                        engine.model.encoder.ode_dynamics.perform_num * args.seq_in)
             averaged_nfe_dec = engine.model.decoder.ode_func.nfe / (
                     engine.model.decoder.ode_dynamics.perform_num * args.seq_out)
             averaged_nfe_record_enc.append(averaged_nfe_enc)
