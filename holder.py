@@ -10,7 +10,7 @@ class Holder():
         self.args = args
         self.model = Model(args).to(self.args.device)
         self.optimizer = op.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
-        self.lr_sch = op.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=0.995, verbose=True)
+        self.lr_sch = op.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=0.99, verbose=True)
         self.loss = utils.masked_mae
         total_num = sum(p.numel() for p in self.model.parameters())
         trainable_num = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
