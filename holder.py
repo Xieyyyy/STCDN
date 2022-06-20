@@ -1,6 +1,6 @@
-import numpy as np
 import torch
 import torch.optim as op
+
 import utils
 from model import Model
 
@@ -19,14 +19,12 @@ class Holder():
     def train(self, inputs, reals):
         self.model.train()
         self.optimizer.zero_grad()
-        if self.args.decoder_interval == None:
-            decrete_outputs = self.model(inputs)
-        else:
-            decrete_outputs = self.model(inputs)
-            # print(continous_outputs.shape)
+        decrete_outputs, z_mu, z_sigma = self.model(inputs)
         reals = reals[:, :self.args.seq_out, :, :]
         prediction = self.args.scaler.inv_transform(decrete_outputs)
-        loss = self.loss(prediction, reals, 0.0)
+        loss1 = self.loss(prediction, reals, 0.0)
+        loss2 = utils.latent_loss(z_mu, z_sigma)
+        loss = loss1 + loss2
         loss.backward(retain_graph=True)
         if self.args.clip is not None:
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
@@ -39,12 +37,7 @@ class Holder():
 
         self.model.eval()
         with torch.no_grad():
-            if self.args.decoder_interval == None:
-                decrete_outputs = self.model(inputs)
-            else:
-                decrete_outputs = self.model(inputs)
-                # continous_outputs = continous_outputs[:, self.extraction, :, :]
-        # reals = reals[:, :self.args.seq_out, :, :]
+            decrete_outputs, _, _ = self.model(inputs)
         prediction = self.args.scaler.inv_transform(decrete_outputs)
         # print(continous_outputs.shape)
         if self.args.task == "speed":
