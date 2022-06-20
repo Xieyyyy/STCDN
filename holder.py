@@ -42,7 +42,7 @@ class Holder():
             if self.args.decoder_interval == None:
                 decrete_outputs = self.model(inputs)
             else:
-                continous_outputs, decrete_outputs = self.model(inputs)
+                decrete_outputs = self.model(inputs)
                 # continous_outputs = continous_outputs[:, self.extraction, :, :]
         # reals = reals[:, :self.args.seq_out, :, :]
         prediction = self.args.scaler.inv_transform(decrete_outputs)
