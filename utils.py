@@ -198,3 +198,9 @@ def metric(pred, real):
     mape = masked_mape(pred, real, 0.0).item()
     rmse = masked_rmse(pred, real, 0.0).item()
     return mae, mape, rmse
+
+
+def latent_loss(z_mean, z_stddev):
+    mean_sq = z_mean * z_mean
+    stddev_sq = z_stddev * z_stddev
+    return 0.5 * torch.mean(mean_sq + stddev_sq - torch.log(stddev_sq) - 1)
