@@ -38,14 +38,14 @@ parser.add_argument("--num_layers", type=int, default=1)
 
 # ---for encoder----
 parser.add_argument("--encoder_interval", type=int, default=2, help="interval of ODE")
-parser.add_argument("--encoder_integrate_mathod", type=str, default="dopri5", help='method of ode')
+parser.add_argument("--encoder_integrate_mathod", type=str, default="rk4", help='method of ode')
 parser.add_argument("--encoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--encoder_atol", type=float, default=.001, help='')
 parser.add_argument("--encoder_adjoint", type=bool, default=False, help='')
 parser.add_argument("--encoder_scale", type=float, default=0.01, help='scaler of T')
 
 # ---for decoder----
-parser.add_argument("--decoder_integrate_mathod", type=str, default="euler", help='method of ode')
+parser.add_argument("--decoder_integrate_mathod", type=str, default="rk4", help='method of ode')
 parser.add_argument("--decoder_interval", type=int, default=2, help="interval of ODE")
 parser.add_argument("--decoder_rtol", type=float, default=.01, help='')
 parser.add_argument("--decoder_atol", type=float, default=.001, help='')
