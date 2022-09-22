@@ -220,7 +220,7 @@ def main():
         averaged_nfe_record_dec = []
         s1 = time.time()
         # dataloader['test_loader'].shuffle()
-        for iter, (x, y) in enumerate(dataloader['test_loader'].get_iterator()):
+        for iter, (x, y) in enumerate(dataloader['val_loader'].get_iterator()):
             # valx = torch.Tensor(x[:, x_idx, :, :]).to(args.device)
             # valy = torch.Tensor(y[:, y_idx, :, :]).to(args.device)
             # x = x[:, x_idx, :, :]
